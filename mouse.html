@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrena tu Mouse con el Búho Winston</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts: Fredoka -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Fredoka', cursive, sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 50%, #e0e7ff 100%);
+            user-select: none;
+            overflow-x: hidden;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="%23f59e0b" stroke="%23ffffff" stroke-width="2"><path d="M3 3l7 18 3-7 7-3L3 3z"/></svg>'), auto;
+        }
+
+        .owl-bounce {
+            animation: owl-float 3s ease-in-out infinite;
+        }
+
+        @keyframes owl-float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
+
+        .pop-animation {
+            animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .bounce-wrong {
+            animation: bounce-shake 0.4s ease-in-out;
+        }
+
+        @keyframes bounce-shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+
+        /* Dragging styles */
+        .draggable-item {
+            touch-action: none;
+            cursor: grab;
+        }
+        .draggable-item:active {
+            cursor: grabbing;
+        }
+
+        /* Backpack Drop Zone Pulsing */
+        .backpack-active {
+            transform: scale(1.05);
+            border-color: #10b981 !important;
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.5) !important;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-2 md:p-4 text-slate-800">
+
+    <header class="max-w-5xl mx-auto w-full bg-white/80 backdrop-blur-md rounded-3xl p-3 md:p-4 shadow-lg border-2 border-white flex justify-between items-center mb-2 md:mb-4">
+        <div class="flex items-center gap-3">
+            <div class="bg-emerald-400 text-emerald-950 w-12 h-12 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-md">
+                <i class="fa-solid fa-computer-mouse"></i>
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold text-sky-600 leading-none">Colegio Winston</h1>
+                <p class="text-xs md:text-sm text-slate-500 font-semibold">Aprende a Usar el Mouse 🖱️</p>
+            </div>
+        </div>
+
+        <!-- Level Selector Pills -->
+        <div class="hidden lg:flex items-center gap-1 md:gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200" id="level-pills">
+            <button onclick="initLevel(1)" id="pill-1" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-900 shadow transition">1. Mover</button>
+            <button onclick="initLevel(2)" id="pill-2" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-600 transition">2. Clic</button>
+            <button onclick="initLevel(3)" id="pill-3" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-600 transition">3. Doble Clic</button>
+            <button onclick="initLevel(4)" id="pill-4" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-600 transition">4. Frutas</button>
+            <button onclick="initLevel(5)" id="pill-5" class="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-600 transition bg-sky-100 text-sky-800">🎒 5. Mochila</button>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex items-center gap-2">
+            <button id="btn-speech-toggle" onclick="toggleSpeech()" class="w-10 h-10 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center hover:bg-sky-200 transition shadow-sm" title="Voz del búho">
+                <i id="speech-icon" class="fa-solid fa-volume-high"></i>
+            </button>
+            <button id="btn-sound-toggle" onclick="toggleSound()" class="w-10 h-10 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center hover:bg-amber-200 transition shadow-sm" title="Efectos de sonido">
+                <i id="sound-icon" class="fa-solid fa-music"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto w-full flex-grow flex flex-col justify-between">
+        
+        <div class="bg-white/90 backdrop-blur border-4 border-emerald-300 rounded-3xl p-4 md:p-5 shadow-xl mb-3 relative overflow-hidden flex flex-col md:flex-row items-center gap-4">
+            <div class="relative shrink-0">
+                <div class="w-20 h-20 md:w-24 md:h-24 bg-amber-300 rounded-full flex items-center justify-center border-4 border-amber-400 shadow-md owl-bounce">
+                    <!-- Owl Icon -->
+                    <svg class="w-14 h-14 text-slate-800" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="32" cy="36" r="22" fill="#059669"/>
+                        <circle cx="32" cy="38" r="16" fill="#FDE047"/>
+                        <circle cx="22" cy="26" r="9" fill="white"/>
+                        <circle cx="42" cy="26" r="9" fill="white"/>
+                        <circle cx="24" cy="26" r="4" fill="#0F172A"/>
+                        <circle cx="40" cy="26" r="4" fill="#0F172A"/>
+                        <circle cx="25" cy="24" r="1.5" fill="white"/>
+                        <circle cx="41" cy="24" r="1.5" fill="white"/>
+                        <polygon points="32,30 27,37 37,37" fill="#F97316"/>
+                        <polygon points="16,16 22,8 26,20" fill="#047857"/>
+                        <polygon points="48,16 42,8 38,20" fill="#047857"/>
+                        <path d="M18 12 L32 6 L46 12 L32 18 Z" fill="#1E293B"/>
+                        <rect x="28" y="12" width="8" height="4" fill="#1E293B"/>
+                        <path d="M44 12 L44 20" stroke="#F59E0B" stroke-width="2"/>
+                        <circle cx="44" cy="21" r="2" fill="#F59E0B"/>
+                    </svg>
+                </div>
+                <div class="absolute -bottom-1 -right-1 bg-sky-500 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow">
+                    Winston 🦉
+                </div>
+            </div>
+
+            <div class="flex-grow text-center md:text-left">
+                <div class="flex items-center justify-between mb-1">
+                    <span id="activity-badge" class="bg-emerald-100 text-emerald-800 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider">
+                        Nivel 1: Mover el Mouse
+                    </span>
+                    <button onclick="speakCurrentInstruction()" class="text-xs bg-amber-200 hover:bg-amber-300 text-amber-800 px-3 py-1 rounded-full font-bold flex items-center gap-1 transition">
+                        <i class="fa-solid fa-volume-high"></i> Escuchar de nuevo
+                    </button>
+                </div>
+                <h2 id="mascot-title" class="text-lg md:text-xl font-bold text-slate-800 mb-0.5">¡A entrenar tu ratón! 🐭</h2>
+                <p id="mascot-text" class="text-sm md:text-base text-slate-600 font-semibold leading-relaxed">
+                    Mueve el mouse por la pantalla y pasa sobre las estrellas para atraparlas. ¡Sin hacer clic!
+                </p>
+            </div>
+        </div>
+
+        <div id="game-container" class="bg-white/90 backdrop-blur rounded-3xl p-4 md:p-6 shadow-xl border-4 border-white flex-grow flex flex-col justify-between mb-2 relative min-h-[390px] overflow-hidden">
+
+            <!-- LEVEL 1: MOVE MOUSE -->
+            <div id="level-1-view" class="level-view relative w-full h-full min-h-[340px] bg-slate-900/90 rounded-2xl border-2 border-slate-700 overflow-hidden flex flex-col justify-between p-4">
+                <div class="flex justify-between items-center text-white z-10">
+                    <span class="text-sm font-bold bg-slate-800/80 px-3 py-1 rounded-xl border border-slate-600">⭐ Estrellas atrapadas: <span id="stars-counter" class="text-amber-400">0</span>/8</span>
+                    <span class="text-xs text-slate-300">¡Pasa el puntero sobre las estrellas!</span>
+                </div>
+                <div id="stars-area" class="relative w-full h-full flex-grow my-2"></div>
+            </div>
+
+            <!-- LEVEL 2: CLICK -->
+            <div id="level-2-view" class="level-view hidden relative w-full h-full min-h-[340px] bg-gradient-to-b from-sky-200 to-sky-100 rounded-2xl border-2 border-sky-300 overflow-hidden flex flex-col justify-between p-4">
+                <div class="flex justify-between items-center z-10">
+                    <span class="text-sm font-bold bg-white/80 text-sky-900 px-3 py-1 rounded-xl border border-sky-200 shadow-sm">🎈 Globos reventados: <span id="balloons-counter" class="text-rose-500">0</span>/6</span>
+                    <span class="text-xs font-semibold text-sky-700">Haz 1 CLIC IZQUIERDO sobre cada globo</span>
+                </div>
+                <div id="balloons-area" class="relative w-full h-full flex-grow my-2"></div>
+            </div>
+
+            <!-- LEVEL 3: DOUBLE CLICK -->
+            <div id="level-3-view" class="level-view hidden relative w-full h-full min-h-[340px] bg-gradient-to-b from-purple-100 to-indigo-100 rounded-2xl border-2 border-purple-300 p-4 flex flex-col justify-between">
+                <div class="flex justify-between items-center z-10">
+                    <span class="text-sm font-bold bg-white/80 text-purple-900 px-3 py-1 rounded-xl border border-purple-200 shadow-sm">🎁 Regalos abiertos: <span id="gifts-counter" class="text-purple-600">0</span>/4</span>
+                    <span class="text-xs font-semibold text-purple-700">Haz DOBLE CLIC RÁPIDO para abrir</span>
+                </div>
+                <div id="gifts-area" class="grid grid-cols-2 md:grid-cols-4 gap-4 my-auto p-4 max-w-3xl mx-auto w-full"></div>
+            </div>
+
+            <!-- LEVEL 4: DRAG & DROP FRUITS -->
+            <div id="level-4-view" class="level-view hidden relative w-full h-full min-h-[340px] bg-amber-50 rounded-2xl border-2 border-amber-200 p-4 flex flex-col justify-between">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-bold bg-white/80 text-amber-900 px-3 py-1 rounded-xl border border-amber-200 shadow-sm">🧩 Piezas ordenadas: <span id="drag-counter" class="text-emerald-600">0</span>/3</span>
+                    <span class="text-xs font-semibold text-amber-800">Arrastra cada fruta a su canasta</span>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center justify-around gap-6 flex-grow my-auto">
+                    <div id="draggable-items-container" class="flex md:flex-col gap-4 justify-center items-center p-3 bg-white/80 rounded-2xl border border-amber-200 shadow-inner"></div>
+                    <div id="drop-targets-container" class="flex flex-wrap md:flex-row gap-4 justify-center items-center"></div>
+                </div>
+            </div>
+
+            <div id="level-5-view" class="level-view hidden relative w-full h-full min-h-[360px] bg-gradient-to-br from-blue-50 to-amber-50 rounded-2xl border-2 border-blue-200 p-3 md:p-4 flex flex-col justify-between">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-bold bg-white/90 text-blue-900 px-3 py-1.5 rounded-xl border border-blue-200 shadow-sm">
+                        🎒 Útiles en la mochila: <span id="backpack-counter" class="text-emerald-600 font-extrabold">0</span>/6
+                    </span>
+                    <span class="text-xs font-semibold text-slate-500">Arrastra SOLO lo que va a la escuela</span>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4 flex-grow my-auto">
+                    
+                    <!-- Left: Available Items Tray -->
+                    <div class="w-full md:w-3/5 bg-white/80 p-3 rounded-2xl border border-slate-200 shadow-sm">
+                        <p class="text-xs font-bold text-slate-500 mb-2 text-center uppercase tracking-wider">Mesa de Objetos (Elige bien)</p>
+                        <div id="backpack-items-grid" class="grid grid-cols-3 gap-2 md:gap-3 justify-items-center">
+                            <!-- Populated dynamically with school supplies & distractors -->
+                        </div>
+                    </div>
+
+                    <!-- Right: Backpack Drop Target -->
+                    <div class="w-full md:w-2/5 flex flex-col items-center justify-center">
+                        <div id="backpack-drop-zone" class="w-full max-w-[220px] bg-sky-100 border-4 border-dashed border-sky-400 rounded-3xl p-4 text-center transition-all duration-300 flex flex-col items-center justify-center min-h-[220px] relative shadow-md">
+                            
+                            <!-- Backpack Graphic -->
+                            <div class="text-6xl md:text-7xl mb-1 animate-bounce">🎒</div>
+                            <span class="font-bold text-sky-900 text-sm md:text-base">Mochila Escolar</span>
+                            <span class="text-xs text-sky-600 font-medium">Suelta los útiles aquí</span>
+
+                            <!-- Inner items preview tags -->
+                            <div id="backpack-contents-preview" class="flex flex-wrap gap-1 justify-center mt-2 max-h-[60px] overflow-y-auto">
+                                <!-- Populated as items are added -->
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div id="level-finale-view" class="level-view hidden flex flex-col items-center justify-center gap-4 flex-grow text-center my-auto py-4">
+                <div class="bg-gradient-to-b from-amber-100 to-amber-200 border-4 border-amber-400 rounded-3xl p-6 md:p-8 shadow-2xl max-w-lg w-full relative">
+                    <div class="text-6xl mb-2 animate-bounce">🏆</div>
+                    <h3 class="text-2xl md:text-3xl font-bold text-amber-900 mb-1">¡Felicidades, Gran Piloto del Mouse!</h3>
+                    <p class="text-slate-700 font-semibold mb-3 text-sm md:text-base">¡Completaste todos los niveles y tu mochila está lista para la escuela!</p>
+                    
+                    <!-- Diploma Card with Editable Name -->
+                    <div class="bg-white rounded-2xl p-4 border-2 border-amber-300 shadow-inner mb-4">
+                        <p class="text-xs text-amber-700 font-bold uppercase tracking-wider">Diploma Colegio Winston</p>
+                        
+                        <div class="my-2">
+                            <label class="text-xs text-slate-400 block mb-1">Escribe tu nombre:</label>
+                            <input type="text" id="student-diploma-name" value="Campeón de 1º de Primaria" class="text-center font-bold text-sky-600 text-lg md:text-xl border-b-2 border-sky-300 focus:outline-none focus:border-sky-500 w-full px-2 py-0.5">
+                        </div>
+
+                        <p class="text-xs text-slate-500">Dominio de Mover • Clic • Doble Clic • Arrastrar & Soltar</p>
+                    </div>
+
+                    <!-- Badges -->
+                    <div class="flex justify-center gap-2 mb-6">
+                        <div class="bg-amber-300 text-amber-900 w-10 h-10 rounded-2xl flex items-center justify-center text-lg shadow" title="Mover">⭐</div>
+                        <div class="bg-amber-300 text-amber-900 w-10 h-10 rounded-2xl flex items-center justify-center text-lg shadow" title="Clic">🎈</div>
+                        <div class="bg-amber-300 text-amber-900 w-10 h-10 rounded-2xl flex items-center justify-center text-lg shadow" title="Doble Clic">🎁</div>
+                        <div class="bg-amber-300 text-amber-900 w-10 h-10 rounded-2xl flex items-center justify-center text-lg shadow" title="Frutas">🍎</div>
+                        <div class="bg-amber-300 text-amber-900 w-10 h-10 rounded-2xl flex items-center justify-center text-lg shadow" title="Mochila">🎒</div>
+                    </div>
+
+                    <button onclick="restartGame()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-6 py-3 rounded-2xl shadow-lg transition transform hover:scale-105">
+                        <i class="fa-solid fa-rotate-right mr-2"></i> Jugar de Nuevo
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        let audioCtx = null;
+        let soundEnabled = true;
+        let speechEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'star') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, now);
+                osc.frequency.exponentialRampToValueAtTime(1320, now + 0.1);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'pop') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'gift') {
+                const freqs = [440, 554, 659, 880];
+                freqs.forEach((f, i) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(f, now + i * 0.05);
+                    gain.gain.setValueAtTime(0.15, now + i * 0.05);
+                    gain.gain.linearRampToValueAtTime(0.01, now + i * 0.05 + 0.15);
+                    osc.start(now + i * 0.05);
+                    osc.stop(now + i * 0.05 + 0.15);
+                });
+            } else if (type === 'drop') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.setValueAtTime(600, now + 0.08);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'wrong') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'level-up') {
+                const freqs = [523.25, 659.25, 783.99, 1046.5];
+                freqs.forEach((f, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(f, now + idx * 0.08);
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+                    gain.gain.linearRampToValueAtTime(0.01, now + idx * 0.08 + 0.2);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.2);
+                });
+            }
+        }
+
+        function speakText(text) {
+            if (!speechEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'es-MX';
+            utterance.rate = 0.95;
+            utterance.pitch = 1.2;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('sound-icon').className = soundEnabled ? 'fa-solid fa-music' : 'fa-solid fa-volume-xmark';
+        }
+
+        function toggleSpeech() {
+            speechEnabled = !speechEnabled;
+            document.getElementById('speech-icon').className = speechEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
+            if (!speechEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+        }
+
+        let currentLevel = 1;
+        let currentInstruction = "";
+
+        function initLevel(lvl) {
+            currentLevel = lvl;
+            updatePills(lvl);
+
+            document.querySelectorAll('.level-view').forEach(v => v.classList.add('hidden'));
+
+            if (lvl === 1) {
+                document.getElementById('level-1-view').classList.remove('hidden');
+                document.getElementById('activity-badge').innerText = 'Nivel 1: Mover el Mouse';
+                setInstruction("Mueve el mouse por la pantalla y pasa sobre las estrellas para atraparlas. ¡Sin hacer clic!");
+                setupLevel1();
+            } else if (lvl === 2) {
+                document.getElementById('level-2-view').classList.remove('hidden');
+                document.getElementById('activity-badge').innerText = 'Nivel 2: Clic Izquierdo';
+                setInstruction("Haz un clic izquierdo sobre cada globo para reventarlo. ¡Vamos!");
+                setupLevel2();
+            } else if (lvl === 3) {
+                document.getElementById('level-3-view').classList.remove('hidden');
+                document.getElementById('activity-badge').innerText = 'Nivel 3: Doble Clic';
+                setInstruction("Haz dos clics muy rápidos (doble clic) sobre las cajas de regalo para abrirlas.");
+                setupLevel3();
+            } else if (lvl === 4) {
+                document.getElementById('level-4-view').classList.remove('hidden');
+                document.getElementById('activity-badge').innerText = 'Nivel 4: Frutas';
+                setInstruction("Manten presionado el clic sobre la fruta y arrástrala hasta la caja correspondiente.");
+                setupLevel4();
+            } else if (lvl === 5) {
+                document.getElementById('level-5-view').classList.remove('hidden');
+                document.getElementById('activity-badge').innerText = '🎒 Nivel 5: Prepara tu Mochila';
+                setInstruction("¡Ayuda a Winston a preparar la mochila! Arrastra los útiles escolares adentro. Ten cuidado con los objetos que no van a la escuela.");
+                setupLevel5();
+            } else if (lvl === 6) {
+                document.getElementById('level-finale-view').classList.remove('hidden');
+                document.getElementById('activity-badge').innerText = '¡Misión Cumplida!';
+                setInstruction("¡Increíble trabajo! Tu mochila está lista y ya eres un experto manejando el ratón.");
+                playSound('level-up');
+                if (typeof confetti === 'function') {
+                    confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+                }
+            }
+        }
+
+        function setInstruction(text) {
+            currentInstruction = text;
+            document.getElementById('mascot-text').innerText = text;
+            speakText(text);
+        }
+
+        function speakCurrentInstruction() {
+            speakText(currentInstruction);
+        }
+
+        function updatePills(lvl) {
+            for (let i = 1; i <= 5; i++) {
+                const pill = document.getElementById(`pill-${i}`);
+                if (!pill) continue;
+                if (i === lvl) {
+                    pill.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-400 text-slate-900 shadow";
+                } else if (i < lvl) {
+                    pill.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-400 text-white";
+                } else {
+                    pill.className = "px-3 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-600";
+                }
+            }
+        }
+
+        /* -------------------------------------------------------------------
+           LEVEL 1: MOVER EL MOUSE
+           ------------------------------------------------------------------- */
+        let starsCaught = 0;
+        const totalStars = 8;
+
+        function setupLevel1() {
+            starsCaught = 0;
+            document.getElementById('stars-counter').innerText = starsCaught;
+            const area = document.getElementById('stars-area');
+            area.innerHTML = '';
+
+            for (let i = 0; i < totalStars; i++) {
+                const star = document.createElement('div');
+                star.className = 'absolute text-4xl cursor-pointer transition-transform duration-200 hover:scale-125 select-none';
+                star.innerHTML = '⭐';
+                
+                const left = Math.floor(Math.random() * 80) + 10;
+                const top = Math.floor(Math.random() * 70) + 10;
+                star.style.left = `${left}%`;
+                star.style.top = `${top}%`;
+
+                star.addEventListener('mouseenter', () => {
+                    playSound('star');
+                    star.classList.add('pop-animation');
+                    star.style.opacity = '0';
+                    star.style.pointerEvents = 'none';
+                    starsCaught++;
+                    document.getElementById('stars-counter').innerText = starsCaught;
+
+                    if (starsCaught >= totalStars) {
+                        playSound('level-up');
+                        setInstruction("¡Excelente coordinación! Aprendiste a mover el ratón. ¡Pasemos al Nivel 2!");
+                        setTimeout(() => initLevel(2), 2000);
+                    }
+                });
+
+                area.appendChild(star);
+            }
+        }
+
+        /* -------------------------------------------------------------------
+           LEVEL 2: CLIC IZQUIERDO
+           ------------------------------------------------------------------- */
+        let balloonsPopped = 0;
+        const totalBalloons = 6;
+
+        function setupLevel2() {
+            balloonsPopped = 0;
+            document.getElementById('balloons-counter').innerText = balloonsPopped;
+            const area = document.getElementById('balloons-area');
+            area.innerHTML = '';
+
+            for (let i = 0; i < totalBalloons; i++) {
+                const balloon = document.createElement('div');
+                balloon.className = 'absolute text-5xl cursor-pointer transition-transform duration-150 hover:scale-110 select-none';
+                balloon.innerHTML = '🎈';
+
+                const left = Math.floor(Math.random() * 80) + 10;
+                const top = Math.floor(Math.random() * 65) + 10;
+                balloon.style.left = `${left}%`;
+                balloon.style.top = `${top}%`;
+
+                balloon.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    playSound('pop');
+                    balloon.style.transform = 'scale(1.5)';
+                    balloon.style.opacity = '0';
+                    balloon.style.pointerEvents = 'none';
+
+                    balloonsPopped++;
+                    document.getElementById('balloons-counter').innerText = balloonsPopped;
+
+                    if (balloonsPopped >= totalBalloons) {
+                        playSound('level-up');
+                        setInstruction("¡Fantástico! Ya dominas el clic. ¡Ahora aprendamos el Doble Clic!");
+                        setTimeout(() => initLevel(3), 2000);
+                    }
+                });
+
+                area.appendChild(balloon);
+            }
+        }
+
+        /* -------------------------------------------------------------------
+           LEVEL 3: DOBLE CLIC
+           ------------------------------------------------------------------- */
+        let giftsOpened = 0;
+        const totalGifts = 4;
+        const surpriseToys = ['🧸', '🏎️', '🎨', '🚀'];
+
+        function setupLevel3() {
+            giftsOpened = 0;
+            document.getElementById('gifts-counter').innerText = giftsOpened;
+            const area = document.getElementById('gifts-area');
+            area.innerHTML = '';
+
+            for (let i = 0; i < totalGifts; i++) {
+                const box = document.createElement('div');
+                box.className = 'bg-white p-6 rounded-3xl border-4 border-purple-300 shadow-lg text-center cursor-pointer transition transform hover:scale-105 flex flex-col items-center justify-center min-h-[140px]';
+                
+                box.innerHTML = `
+                    <div class="gift-icon text-5xl mb-2">🎁</div>
+                    <span class="text-xs font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">Doble Clic</span>
+                `;
+
+                box.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    if (box.dataset.opened) return;
+                    box.dataset.opened = "true";
+
+                    playSound('gift');
+                    box.className = 'bg-amber-100 p-6 rounded-3xl border-4 border-amber-400 shadow-inner text-center flex flex-col items-center justify-center min-h-[140px] pop-animation';
+                    box.innerHTML = `
+                        <div class="text-6xl mb-1 animate-bounce">${surpriseToys[i]}</div>
+                        <span class="text-xs font-bold text-amber-800 bg-amber-200 px-2 py-0.5 rounded-full">¡Sorpresa!</span>
+                    `;
+
+                    giftsOpened++;
+                    document.getElementById('gifts-counter').innerText = giftsOpened;
+
+                    if (giftsOpened >= totalGifts) {
+                        playSound('level-up');
+                        setInstruction("¡Genial! Abriste los regalos. ¡Ahora clasifiquemos algunas frutas!");
+                        setTimeout(() => initLevel(4), 2000);
+                    }
+                });
+
+                area.appendChild(box);
+            }
+        }
+
+        /* -------------------------------------------------------------------
+           LEVEL 4: ARRASTRAR FRUTAS
+           ------------------------------------------------------------------- */
+        let itemsSorted = 0;
+        const itemsData = [
+            { id: 'apple', emoji: '🍎', name: 'Manzana', color: 'border-rose-400 bg-rose-50' },
+            { id: 'banana', emoji: '🍌', name: 'Plátano', color: 'border-amber-400 bg-amber-50' },
+            { id: 'grapes', emoji: '🍇', name: 'Uvas', color: 'border-purple-400 bg-purple-50' }
+        ];
+
+        function setupLevel4() {
+            itemsSorted = 0;
+            document.getElementById('drag-counter').innerText = itemsSorted;
+
+            const itemsContainer = document.getElementById('draggable-items-container');
+            const targetsContainer = document.getElementById('drop-targets-container');
+
+            itemsContainer.innerHTML = '';
+            targetsContainer.innerHTML = '';
+
+            const shuffledItems = [...itemsData].sort(() => Math.random() - 0.5);
+
+            shuffledItems.forEach(item => {
+                const el = document.createElement('div');
+                el.id = `drag-${item.id}`;
+                el.draggable = true;
+                el.className = `draggable-item bg-white border-2 border-slate-300 p-3 md:p-4 rounded-2xl text-4xl md:text-5xl shadow-md flex flex-col items-center justify-center hover:scale-105 transition`;
+                el.innerHTML = `<span>${item.emoji}</span><span class="text-xs font-bold text-slate-600 mt-1">${item.name}</span>`;
+
+                el.addEventListener('dragstart', (e) => {
+                    initAudio();
+                    e.dataTransfer.setData('text/plain', item.id);
+                });
+
+                itemsContainer.appendChild(el);
+            });
+
+            itemsData.forEach(target => {
+                const box = document.createElement('div');
+                box.id = `target-${target.id}`;
+                box.className = `w-28 h-28 md:w-36 md:h-36 ${target.color} border-4 border-dashed rounded-3xl flex flex-col items-center justify-center p-2 text-center transition`;
+                box.innerHTML = `
+                    <span class="text-xs font-bold text-slate-500 mb-1">Caja de</span>
+                    <span class="text-2xl">${target.emoji}</span>
+                `;
+
+                box.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    box.classList.add('scale-105', 'border-solid');
+                });
+
+                box.addEventListener('dragleave', () => {
+                    box.classList.remove('scale-105', 'border-solid');
+                });
+
+                box.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    box.classList.remove('scale-105', 'border-solid');
+                    const draggedId = e.dataTransfer.getData('text/plain');
+
+                    if (draggedId === target.id) {
+                        playSound('drop');
+                        const draggedEl = document.getElementById(`drag-${draggedId}`);
+                        if (draggedEl) draggedEl.remove();
+
+                        box.className = `w-28 h-28 md:w-36 md:h-36 bg-emerald-100 border-4 border-emerald-400 rounded-3xl flex flex-col items-center justify-center p-2 text-center pop-animation`;
+                        box.innerHTML = `<span class="text-4xl md:text-5xl">${target.emoji}</span><span class="text-xs font-bold text-emerald-700 mt-1">¡Listo!</span>`;
+
+                        itemsSorted++;
+                        document.getElementById('drag-counter').innerText = itemsSorted;
+
+                        if (itemsSorted >= itemsData.length) {
+                            setTimeout(() => initLevel(5), 1500);
+                        }
+                    }
+                });
+
+                targetsContainer.appendChild(box);
+            });
+        }
+
+        let backpackItemsCount = 0;
+        const requiredSuppliesCount = 6;
+
+        // Backpack items dataset: valid school supplies vs distractors
+        const backpackDataset = [
+            { id: 'notebook', emoji: '📓', name: 'Cuaderno', isValid: true },
+            { id: 'pencil', emoji: '✏️', name: 'Lápiz', isValid: true },
+            { id: 'shoe', emoji: '👟', name: 'Zapato', isValid: false, hint: '¡Ups! El zapato no va en la mochila, va en los pies.' },
+            { id: 'colors', emoji: '🎨', name: 'Colores', isValid: true },
+            { id: 'pillow', emoji: '🛏️', name: 'Almohada', isValid: false, hint: '¡Ups! La almohada se queda en la cama para dormir.' },
+            { id: 'eraser', emoji: '🧽', name: 'Goma', isValid: true },
+            { id: 'pan', emoji: '🍳', name: 'Sartén', isValid: false, hint: '¡Ups! La sartén se queda en la cocina.' },
+            { id: 'lunchbox', emoji: '🍱', name: 'Lonchera', isValid: true },
+            { id: 'plant', emoji: '🪴', name: 'Planta', isValid: false, hint: '¡Ups! Las plantas van en el jardín.' },
+            { id: 'water', emoji: '🥤', name: 'Agua', isValid: true }
+        ];
+
+        function setupLevel5() {
+            backpackItemsCount = 0;
+            document.getElementById('backpack-counter').innerText = backpackItemsCount;
+            document.getElementById('backpack-contents-preview').innerHTML = '';
+
+            const grid = document.getElementById('backpack-items-grid');
+            grid.innerHTML = '';
+
+            // Shuffle items
+            const shuffled = [...backpackDataset].sort(() => Math.random() - 0.5);
+
+            shuffled.forEach(item => {
+                const card = document.createElement('div');
+                card.id = `item-${item.id}`;
+                card.draggable = true;
+                card.className = `draggable-item bg-white border-2 border-slate-200 p-2 md:p-3 rounded-2xl text-center shadow hover:shadow-md hover:scale-105 transition flex flex-col items-center justify-center w-20 h-20 md:w-24 md:h-24`;
+                card.innerHTML = `
+                    <span class="text-3xl md:text-4xl select-none">${item.emoji}</span>
+                    <span class="text-[10px] md:text-xs font-bold text-slate-600 mt-1 leading-none">${item.name}</span>
+                `;
+
+                card.addEventListener('dragstart', (e) => {
+                    initAudio();
+                    e.dataTransfer.setData('text/plain', JSON.stringify(item));
+                });
+
+                grid.appendChild(card);
+            });
+
+            // Backpack drop target configuration
+            const dropZone = document.getElementById('backpack-drop-zone');
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('backpack-active');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('backpack-active');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('backpack-active');
+
+                const dataRaw = e.dataTransfer.getData('text/plain');
+                if (!dataRaw) return;
+
+                const item = JSON.parse(dataRaw);
+                const cardEl = document.getElementById(`item-${item.id}`);
+
+                if (item.isValid) {
+                    // Correct Item
+                    playSound('drop');
+                    if (cardEl) cardEl.remove();
+
+                    // Add icon to backpack preview
+                    const preview = document.getElementById('backpack-contents-preview');
+                    preview.innerHTML += `<span class="bg-sky-200 text-sky-900 px-2 py-1 rounded-xl text-xs font-bold animate-bounce">${item.emoji}</span>`;
+
+                    backpackItemsCount++;
+                    document.getElementById('backpack-counter').innerText = backpackItemsCount;
+
+                    if (backpackItemsCount >= requiredSuppliesCount) {
+                        setTimeout(() => initLevel(6), 1500);
+                    } else {
+                        setInstruction(`¡Muy bien! Guardaste el ${item.name}. Sigue guardando los demás útiles.`);
+                    }
+                } else {
+                    // Incorrect Distractor Item
+                    playSound('wrong');
+                    if (cardEl) {
+                        cardEl.classList.add('bounce-wrong', 'border-rose-400', 'bg-rose-50');
+                        setTimeout(() => {
+                            cardEl.classList.remove('bounce-wrong', 'border-rose-400', 'bg-rose-50');
+                        }, 500);
+                    }
+                    setInstruction(item.hint || "¡Ups! Eso no va en la mochila escolar.");
+                }
+            });
+        }
+
+        function restartGame() {
+            initLevel(1);
+        }
+
+        // Initialize game on window load
+        window.onload = function() {
+            initLevel(1);
+        };
+    </script>
+</body>
+</html>

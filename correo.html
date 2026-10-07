@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprende a Iniciar Sesión con el Búho Winston</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts: Fredoka for child-friendly typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Fredoka', cursive, sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 50%, #fce7f3 100%);
+            user-select: none;
+        }
+
+        /* Keypress effect */
+        .key-active {
+            transform: scale(0.92) translateY(4px) !important;
+            box-shadow: 0 0px 0px rgba(0,0,0,0.2) !important;
+            background-color: #facc15 !important;
+            color: #1e293b !important;
+        }
+
+        .key-target {
+            animation: pulse-target 1.2s infinite alternate;
+            border: 3px solid #f59e0b !important;
+            background-color: #fef08a !important;
+        }
+
+        @keyframes pulse-target {
+            0% { transform: scale(1); box-shadow: 0 0 10px #f59e0b; }
+            100% { transform: scale(1.08); box-shadow: 0 0 20px #f59e0b; }
+        }
+
+        /* Owl bounce animation */
+        .owl-bounce {
+            animation: owl-float 3s ease-in-out infinite;
+        }
+
+        @keyframes owl-float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(2deg); }
+        }
+
+        /* Custom Key Styles */
+        .keyboard-key {
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.15);
+        }
+        .keyboard-key:active {
+            box-shadow: 0 0px 0 rgba(0, 0, 0, 0.15);
+            transform: translateY(4px);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-2 md:p-4 text-slate-800">
+
+    <!-- Top Bar Navigation & Sound Controls -->
+    <header class="max-w-5xl mx-auto w-full bg-white/80 backdrop-blur-md rounded-3xl p-3 md:p-4 shadow-lg border-2 border-white flex justify-between items-center mb-2 md:mb-4">
+        <div class="flex items-center gap-3">
+            <div class="bg-amber-400 text-amber-900 w-12 h-12 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-md">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold text-sky-600 leading-none">Colegio Winston</h1>
+                <p class="text-xs md:text-sm text-slate-500 font-semibold">Inicia Sesión como un Campeón 🚀</p>
+            </div>
+        </div>
+
+        <!-- Level Indicator Pills -->
+        <div class="hidden sm:flex items-center gap-1 md:gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200" id="level-pills">
+            <span id="pill-1" class="px-3 py-1 rounded-xl text-xs font-bold bg-amber-400 text-white shadow">Nivel 1</span>
+            <span id="pill-2" class="px-3 py-1 rounded-xl text-xs font-bold text-slate-400">Nivel 2</span>
+            <span id="pill-3" class="px-3 py-1 rounded-xl text-xs font-bold text-slate-400">Nivel 3</span>
+            <span id="pill-4" class="px-3 py-1 rounded-xl text-xs font-bold text-slate-400">Nivel 4</span>
+        </div>
+
+        <!-- Audio controls -->
+        <div class="flex items-center gap-2">
+            <button id="btn-speech-toggle" onclick="toggleSpeech()" class="w-10 h-10 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center hover:bg-sky-200 transition shadow-sm" title="Voz del búho">
+                <i id="speech-icon" class="fa-solid fa-volume-high"></i>
+            </button>
+            <button id="btn-sound-toggle" onclick="toggleSound()" class="w-10 h-10 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center hover:bg-amber-200 transition shadow-sm" title="Efectos de sonido">
+                <i id="sound-icon" class="fa-solid fa-music"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mascot Instructions Banner -->
+    <main class="max-w-5xl mx-auto w-full flex-grow flex flex-col justify-between">
+        
+        <div class="bg-white/90 backdrop-blur border-4 border-sky-300 rounded-3xl p-4 md:p-6 shadow-xl mb-4 relative overflow-hidden flex flex-col md:flex-row items-center gap-4">
+            <!-- Mascot Image/SVG -->
+            <div class="relative shrink-0">
+                <div class="w-24 h-24 md:w-28 md:h-28 bg-amber-300 rounded-full flex items-center justify-center border-4 border-amber-400 shadow-md owl-bounce">
+                    <!-- Owl SVG Icon -->
+                    <svg class="w-16 h-16 text-slate-800" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="32" cy="36" r="22" fill="#7C3AED"/>
+                        <circle cx="32" cy="38" r="16" fill="#FDE047"/>
+                        <!-- Eyes -->
+                        <circle cx="22" cy="26" r="9" fill="white"/>
+                        <circle cx="42" cy="26" r="9" fill="white"/>
+                        <circle cx="24" cy="26" r="4" fill="#0F172A"/>
+                        <circle cx="40" cy="26" r="4" fill="#0F172A"/>
+                        <circle cx="25" cy="24" r="1.5" fill="white"/>
+                        <circle cx="41" cy="24" r="1.5" fill="white"/>
+                        <!-- Beak -->
+                        <polygon points="32,30 27,37 37,37" fill="#F97316"/>
+                        <!-- Ears/Tufts -->
+                        <polygon points="16,16 22,8 26,20" fill="#6D28D9"/>
+                        <polygon points="48,16 42,8 38,20" fill="#6D28D9"/>
+                        <!-- Graduation Cap -->
+                        <path d="M18 12 L32 6 L46 12 L32 18 Z" fill="#1E293B"/>
+                        <rect x="28" y="12" width="8" height="4" fill="#1E293B"/>
+                        <path d="M44 12 L44 20" stroke="#F59E0B" stroke-width="2"/>
+                        <circle cx="44" cy="21" r="2" fill="#F59E0B"/>
+                    </svg>
+                </div>
+                <div class="absolute -bottom-2 -right-1 bg-emerald-500 text-white text-xs px-2 py-0.5 rounded-full font-bold shadow">
+                    Winston 🦉
+                </div>
+            </div>
+
+            <!-- Dialogue Speech Bubble -->
+            <div class="flex-grow text-center md:text-left">
+                <div class="flex items-center justify-between mb-1">
+                    <span id="activity-badge" class="bg-sky-100 text-sky-700 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider">
+                        Nivel 1: Conociendo Teclas
+                    </span>
+                    <button onclick="speakCurrentInstruction()" class="text-xs bg-amber-200 hover:bg-amber-300 text-amber-800 px-3 py-1 rounded-full font-bold flex items-center gap-1 transition">
+                        <i class="fa-solid fa-volume-high"></i> Repetir voz
+                    </button>
+                </div>
+                <h2 id="mascot-title" class="text-xl md:text-2xl font-bold text-slate-800 mb-1">¡Hola, amiguito! 👋</h2>
+                <p id="mascot-text" class="text-base md:text-lg text-slate-600 font-semibold leading-relaxed">
+                    Soy el búho Winston. Hoy aprenderemos a usar el teclado para entrar a tu cuenta escolar. ¡Vamos a jugar!
+                </p>
+            </div>
+        </div>
+
+        <!-- Interactive Level Workspace -->
+        <div id="game-container" class="bg-white/90 backdrop-blur rounded-3xl p-4 md:p-6 shadow-xl border-4 border-white flex-grow flex flex-col justify-between mb-4">
+
+            <!-- LEVEL 1: Key Identification -->
+            <div id="level-1-view" class="level-view flex flex-col items-center justify-center gap-4 flex-grow">
+                <div class="text-center">
+                    <p class="text-sm md:text-base text-slate-500">Haz clic en la tecla en pantalla o presiónala en tu teclado físico:</p>
+                    <div id="target-key-display" class="my-2 inline-block bg-amber-400 text-slate-900 font-bold text-2xl md:text-3xl px-6 py-3 rounded-2xl shadow-lg border-2 border-amber-500 animate-bounce">
+                        Buscando: Espacio
+                    </div>
+                </div>
+
+                <div class="w-full flex justify-center items-center my-2">
+                    <div id="key-progress-bar" class="w-64 bg-slate-200 h-4 rounded-full overflow-hidden border border-slate-300">
+                        <div id="key-progress-fill" class="bg-emerald-500 h-full w-0 transition-all duration-300"></div>
+                    </div>
+                    <span id="key-progress-text" class="ml-3 font-bold text-slate-600 text-sm">0/7</span>
+                </div>
+            </div>
+
+            <!-- LEVEL 2: The Secret of @ (Alt Gr + Q) -->
+            <div id="level-2-view" class="level-view hidden flex flex-col items-center justify-center gap-4 flex-grow">
+                <div class="bg-amber-50 border-2 border-amber-300 p-4 rounded-2xl text-center max-w-lg">
+                    <h3 class="text-lg font-bold text-amber-800 mb-1">✨ El Truco del Arroba (@) ✨</h3>
+                    <p class="text-sm md:text-base text-amber-900">
+                        Para hacer la <span class="bg-amber-200 px-2 py-0.5 rounded font-bold text-xl">@</span> tienes que mantener presionada la tecla <span class="font-bold bg-amber-200 px-2 py-0.5 rounded">Alt Gr</span> y después presionar la letra <span class="font-bold bg-amber-200 px-2 py-0.5 rounded">Q</span>.
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-3 my-2">
+                    <div id="badge-altgr" class="bg-slate-200 text-slate-700 text-xl md:text-2xl font-bold px-4 py-3 rounded-2xl border-b-4 border-slate-400">
+                        Alt Gr
+                    </div>
+                    <span class="text-2xl font-bold text-slate-400">+</span>
+                    <div id="badge-q" class="bg-slate-200 text-slate-700 text-xl md:text-2xl font-bold px-5 py-3 rounded-2xl border-b-4 border-slate-400">
+                        Q
+                    </div>
+                    <span class="text-2xl font-bold text-slate-400">=</span>
+                    <div class="bg-emerald-100 text-emerald-700 text-3xl font-bold px-6 py-3 rounded-2xl border-2 border-emerald-400 shadow">
+                        @
+                    </div>
+                </div>
+
+                <p class="text-sm text-slate-600 font-semibold">¡Practica creando <span id="at-counter-target">3</span> arrobas! Hazlo en tu teclado o presionando <span class="bg-amber-200 px-2 rounded">Alt Gr</span> + <span class="bg-amber-200 px-2 rounded">Q</span> abajo.</p>
+
+                <!-- Generated @ Container -->
+                <div id="at-output-box" class="min-h-[60px] w-full max-w-md bg-slate-100 rounded-2xl border-2 border-dashed border-slate-300 flex items-center justify-center gap-2 p-2 text-3xl font-bold text-sky-600">
+                    <span class="text-slate-400 text-sm font-normal">Aquí aparecerán tus @</span>
+                </div>
+            </div>
+
+            <!-- LEVEL 3: Email Input Practice -->
+            <div id="level-3-view" class="level-view hidden flex flex-col items-center justify-center gap-4 flex-grow w-full max-w-xl mx-auto">
+                <div class="w-full bg-slate-50 p-4 md:p-6 rounded-3xl border-2 border-slate-200 shadow-inner">
+                    <label class="block text-slate-600 font-bold mb-2 text-sm md:text-base">Escribe tu correo de la escuela:</label>
+                    
+                    <div class="relative">
+                        <input type="text" id="email-input" autocomplete="off" placeholder="tu.nombre@winston93.edu.mx" 
+                            class="w-full text-lg md:text-xl font-bold px-4 py-3 rounded-2xl border-4 border-sky-300 focus:border-sky-500 focus:outline-none shadow-sm text-slate-800 pr-12">
+                        <div id="email-status-icon" class="absolute right-4 top-1/2 transform -translate-y-1/2 text-2xl text-slate-300">
+                            <i class="fa-solid fa-circle-question"></i>
+                        </div>
+                    </div>
+
+                    <!-- Visual Helper/Hint Box -->
+                    <div class="mt-3 bg-sky-50 border border-sky-200 p-3 rounded-2xl flex items-center justify-between">
+                        <div class="text-xs md:text-sm text-sky-800 font-medium">
+                            <span class="font-bold">Terminación obligatoria:</span> <span class="bg-sky-200 text-sky-900 px-2 py-0.5 rounded font-bold">@winston93.edu.mx</span>
+                        </div>
+                        <button onclick="autoFillDomain()" class="bg-sky-500 hover:bg-sky-600 text-white text-xs px-3 py-1.5 rounded-xl font-bold transition shadow">
+                            + Agregar @winston93.edu.mx
+                        </button>
+                    </div>
+                </div>
+
+                <div id="email-feedback" class="text-center font-bold text-slate-600 text-sm min-h-[24px]">
+                    Escribe tu nombre o usuario seguido de @winston93.edu.mx
+                </div>
+            </div>
+
+            <!-- LEVEL 4: Password Practice -->
+            <div id="level-4-view" class="level-view hidden flex flex-col items-center justify-center gap-4 flex-grow w-full max-w-xl mx-auto">
+                <div class="w-full bg-slate-50 p-4 md:p-6 rounded-3xl border-2 border-slate-200 shadow-inner">
+                    <div class="mb-4">
+                        <span class="text-xs font-bold text-slate-400 block mb-1">USUARIO CONFIRMADO</span>
+                        <div id="confirmed-email-display" class="bg-emerald-100 text-emerald-800 px-3 py-2 rounded-xl text-sm font-bold flex items-center gap-2">
+                            <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                            <span id="user-email-text">alumno@winston93.edu.mx</span>
+                        </div>
+                    </div>
+
+                    <label class="block text-slate-600 font-bold mb-2 text-sm md:text-base">Escribe tu contraseña secreta:</label>
+                    <div class="relative">
+                        <input type="password" id="password-input" placeholder="Escribe al menos 4 caracteres..." 
+                            class="w-full text-lg md:text-xl font-bold px-4 py-3 rounded-2xl border-4 border-amber-300 focus:border-amber-500 focus:outline-none shadow-sm text-slate-800 pr-12">
+                        
+                        <!-- Toggle Password Visibility -->
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 p-2 text-xl">
+                            <i id="password-eye-icon" class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+
+                    <div class="mt-3 flex items-center gap-2 text-xs text-slate-500">
+                        <i class="fa-solid fa-lightbulb text-amber-500 text-base"></i>
+                        <span>Usa el botón del <i class="fa-solid fa-eye"></i> "ojito" si quieres ver lo que escribes.</span>
+                    </div>
+                </div>
+
+                <button id="btn-login-submit" onclick="submitLogin()" class="w-full max-w-sm bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-lg py-3.5 rounded-2xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
+                </button>
+            </div>
+
+            <!-- LEVEL GRAND FINALE: Trophy & Diploma -->
+            <div id="level-finale-view" class="level-view hidden flex flex-col items-center justify-center gap-4 flex-grow text-center">
+                <div class="bg-gradient-to-b from-amber-100 to-amber-200 border-4 border-amber-400 rounded-3xl p-6 md:p-8 shadow-2xl max-w-lg w-full relative">
+                    <div class="text-6xl mb-2 animate-bounce">🏆</div>
+                    <h3 class="text-2xl md:text-3xl font-bold text-amber-900 mb-2">¡Felicidades, Campeón!</h3>
+                    <p class="text-slate-700 font-medium mb-4">Has completado todos los desafíos y ya sabes cómo iniciar sesión en tu correo escolar.</p>
+                    
+                    <div class="bg-white rounded-2xl p-4 border-2 border-amber-300 shadow-inner mb-4">
+                        <p class="text-xs text-amber-700 font-bold uppercase tracking-wider">Certificado Oficial Winston</p>
+                        <p class="text-lg font-bold text-slate-800 my-1" id="certificate-name">Experto en Inicio de Sesión</p>
+                        <p class="text-xs text-slate-500">Dominio de Teclado & Correo @winston93.edu.mx</p>
+                    </div>
+
+                    <!-- Badges collection -->
+                    <div class="flex justify-center gap-3 mb-6">
+                        <div class="bg-amber-300 text-amber-900 w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow" title="Teclas Espacio y Enter">⌨️</div>
+                        <div class="bg-amber-300 text-amber-900 w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow" title="Dominio del Arroba">@</div>
+                        <div class="bg-amber-300 text-amber-900 w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow" title="Correo Winston">📧</div>
+                        <div class="bg-amber-300 text-amber-900 w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow" title="Contraseña Segura">🔑</div>
+                    </div>
+
+                    <button onclick="restartGame()" class="bg-sky-500 hover:bg-sky-600 text-white font-bold px-6 py-3 rounded-2xl shadow-lg transition transform hover:scale-105">
+                        <i class="fa-solid fa-rotate-right mr-2"></i> Jugar de nuevo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Virtual Interactive Keyboard Display -->
+            <div id="virtual-keyboard-container" class="mt-4 bg-slate-200/90 p-2 md:p-4 rounded-3xl border-2 border-slate-300 shadow-md">
+                <div class="text-center text-xs text-slate-500 font-bold mb-2 uppercase tracking-wider">Teclado Interactivo Winston</div>
+                
+                <div class="flex flex-col gap-1.5 max-w-4xl mx-auto select-none" id="virtual-keyboard">
+                    <!-- Row 1: Numbers -->
+                    <div class="flex gap-1 justify-center">
+                        <button data-key="1" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">1</button>
+                        <button data-key="2" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">2</button>
+                        <button data-key="3" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">3</button>
+                        <button data-key="4" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">4</button>
+                        <button data-key="5" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">5</button>
+                        <button data-key="6" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">6</button>
+                        <button data-key="7" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">7</button>
+                        <button data-key="8" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">8</button>
+                        <button data-key="9" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">9</button>
+                        <button data-key="0" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">0</button>
+                        <button data-key="Backspace" class="keyboard-key bg-rose-200 text-rose-800 font-bold h-9 md:h-11 rounded-xl text-xs flex-[1.5]">Borrar ⌫</button>
+                    </div>
+
+                    <!-- Row 2: QWERTY -->
+                    <div class="flex gap-1 justify-center">
+                        <button data-key="q" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">Q</button>
+                        <button data-key="w" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">W</button>
+                        <button data-key="e" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">E</button>
+                        <button data-key="r" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">R</button>
+                        <button data-key="t" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">T</button>
+                        <button data-key="y" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">Y</button>
+                        <button data-key="u" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">U</button>
+                        <button data-key="i" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">I</button>
+                        <button data-key="o" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">O</button>
+                        <button data-key="p" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">P</button>
+                    </div>
+
+                    <!-- Row 3: ASDF & Enter -->
+                    <div class="flex gap-1 justify-center">
+                        <button data-key="CapsLock" class="keyboard-key bg-indigo-200 text-indigo-900 font-bold h-9 md:h-11 rounded-xl text-xs flex-[1.5]">Bloq Mayús</button>
+                        <button data-key="a" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">A</button>
+                        <button data-key="s" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">S</button>
+                        <button data-key="d" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">D</button>
+                        <button data-key="f" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">F</button>
+                        <button data-key="g" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">G</button>
+                        <button data-key="h" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">H</button>
+                        <button data-key="j" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">J</button>
+                        <button data-key="k" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">K</button>
+                        <button data-key="l" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">L</button>
+                        <button data-key="Enter" class="keyboard-key bg-emerald-300 text-emerald-950 font-bold h-9 md:h-11 rounded-xl text-xs flex-[1.8]">Enter ↵</button>
+                    </div>
+
+                    <!-- Row 4: Shift & ZXCV -->
+                    <div class="flex gap-1 justify-center">
+                        <button data-key="Shift" class="keyboard-key bg-sky-200 text-sky-900 font-bold h-9 md:h-11 rounded-xl text-xs flex-[2]">Shift ⇧</button>
+                        <button data-key="z" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">Z</button>
+                        <button data-key="x" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">X</button>
+                        <button data-key="c" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">C</button>
+                        <button data-key="v" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">V</button>
+                        <button data-key="b" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">B</button>
+                        <button data-key="n" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">N</button>
+                        <button data-key="m" class="keyboard-key bg-white text-slate-800 font-bold h-9 md:h-11 rounded-xl text-xs md:text-sm flex-1">M</button>
+                        <button data-key="." class="keyboard-key bg-amber-200 text-amber-900 font-bold h-9 md:h-11 rounded-xl text-base flex-1">.</button>
+                        <button data-key="Shift" class="keyboard-key bg-sky-200 text-sky-900 font-bold h-9 md:h-11 rounded-xl text-xs flex-[1.5]">Shift ⇧</button>
+                    </div>
+
+                    <!-- Row 5: Alt Gr & Spacebar -->
+                    <div class="flex gap-1 justify-center">
+                        <button data-key="AltGraph" class="keyboard-key bg-purple-200 text-purple-900 font-bold h-9 md:h-11 rounded-xl text-xs flex-[2]">Alt Gr</button>
+                        <button data-key=" " class="keyboard-key bg-amber-100 text-amber-900 font-bold h-9 md:h-11 rounded-xl text-xs flex-[6]">Espacio</button>
+                        <button data-key="@" class="keyboard-key bg-teal-200 text-teal-900 font-bold h-9 md:h-11 rounded-xl text-xs flex-[2]">@</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        /* ===================================================================
+           1. AUDIO SYSTEM (WEB AUDIO API & SPEECH SYNTHESIS)
+           =================================================================== */
+        let audioCtx = null;
+        let soundEnabled = true;
+        let speechEnabled = true;
+
+        // Initialize Web Audio Context on first interaction
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // Sound Effects Synthesizer
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'key') {
+                // Short soft click
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.05);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'success') {
+                // Happy double tone
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'level-up') {
+                // Arpeggio fanfare
+                const freqs = [392, 523.25, 659.25, 783.99, 1046.5];
+                freqs.forEach((f, idx) => {
+                    const subOsc = audioCtx.createOscillator();
+                    const subGain = audioCtx.createGain();
+                    subOsc.connect(subGain);
+                    subGain.connect(audioCtx.destination);
+                    subOsc.type = 'sine';
+                    subOsc.frequency.setValueAtTime(f, now + idx * 0.08);
+                    subGain.gain.setValueAtTime(0.2, now + idx * 0.08);
+                    subGain.gain.linearRampToValueAtTime(0.01, now + idx * 0.08 + 0.2);
+                    subOsc.start(now + idx * 0.08);
+                    subOsc.stop(now + idx * 0.08 + 0.2);
+                });
+            } else if (type === 'error') {
+                // Low error buzz
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+        }
+
+        // Web Speech API Voice Narrator
+        function speakText(text) {
+            if (!speechEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel(); // Stop ongoing speech
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'es-MX';
+            utterance.rate = 0.95; // Slightly slower for kids
+            utterance.pitch = 1.2; // Friendly higher pitch
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            icon.className = soundEnabled ? 'fa-solid fa-music' : 'fa-solid fa-volume-xmark';
+        }
+
+        function toggleSpeech() {
+            speechEnabled = !speechEnabled;
+            const icon = document.getElementById('speech-icon');
+            icon.className = speechEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
+            if (!speechEnabled && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        /* ===================================================================
+           2. GAME STATE & LEVEL CONTROLLER
+           =================================================================== */
+        let currentLevel = 1;
+        let currentInstruction = "";
+
+        // Level 1: Target key sequence
+        const level1Keys = [
+            { key: ' ', label: 'Espacio', msg: 'Busca la tecla larga: ESPACIO' },
+            { key: 'Enter', label: 'Enter (Entrar)', msg: 'Busca la tecla grande: ENTER' },
+            { key: 'CapsLock', label: 'Bloq Mayús', msg: 'Encuentra BLOQ MAYÚS para letras grandes' },
+            { key: 'Shift', label: 'Shift (Mayús)', msg: 'Encuentra la tecla SHIFT' },
+            { key: 'AltGraph', label: 'Alt Gr', msg: 'Busca la tecla ALT GR cerca del espacio' },
+            { key: '.', label: 'Punto (.)', msg: 'Encuentra el PUNTO para los correos' },
+            { key: '9', label: 'Número 9', msg: 'Por último, presiona el NÚMERO 9' }
+        ];
+        let level1Index = 0;
+
+        // Level 2: At symbol practice
+        let level2Count = 0;
+        const level2Target = 3;
+        let isAltGrPressed = false;
+
+        // Level 3: Email domain check
+        const DOMAIN = "@winston93.edu.mx";
+
+        function initLevel(level) {
+            currentLevel = level;
+            updateLevelPills(level);
+
+            // Hide all level views
+            document.querySelectorAll('.level-view').forEach(v => v.classList.add('hidden'));
+
+            if (level === 1) {
+                document.getElementById('level-1-view').classList.remove('hidden');
+                document.getElementById('activity-badge').innerText = 'Nivel 1: Conociendo Teclas';
+                level1Index = 0;
+                updateLevel1Task();
+            } else if (level === 2) {
+                document.getElementById('level-2-view').classList.remove('hidden');
+                document.getElementById('activity-badge').innerText = 'Nivel 2: El Secreto del Arroba';
+                level2Count = 0;
+                updateLevel2Display();
+                setInstruction("¡Vamos a crear la @! Mantén presionada Alt Gr y luego presiona la letra Q.");
+            } else if (level === 3) {
+                document.getElementById('level-3-view').classList.remove('hidden');
+                document.getElementById('activity-badge').innerText = 'Nivel 3: Correo Escolar';
+                setInstruction("Escribe tu nombre de usuario seguido de @winston93.edu.mx");
+                setupLevel3Listeners();
+            } else if (level === 4) {
+                document.getElementById('level-4-view').classList.remove('hidden');
+                document.getElementById('activity-badge').innerText = 'Nivel 4: Tu Contraseña';
+                const emailVal = document.getElementById('email-input').value || "alumno" + DOMAIN;
+                document.getElementById('user-email-text').innerText = emailVal;
+                setInstruction("Ahora escribe una contraseña y presiona el botón Iniciar Sesión.");
+            } else if (level === 5) {
+                document.getElementById('level-finale-view').classList.remove('hidden');
+                document.getElementById('activity-badge').innerText = '¡Misión Cumplida!';
+                setInstruction("¡Excelente trabajo! Ya eres un experto en entrar a tu cuenta escolar.");
+                playSound('level-up');
+                triggerConfetti();
+            }
+        }
+
+        function setInstruction(text, title = null) {
+            currentInstruction = text;
+            document.getElementById('mascot-text').innerText = text;
+            if (title) document.getElementById('mascot-title').innerText = title;
+            speakText(text);
+        }
+
+        function speakCurrentInstruction() {
+            speakText(currentInstruction);
+        }
+
+        function updateLevelPills(level) {
+            for (let i = 1; i <= 4; i++) {
+                const pill = document.getElementById(`pill-${i}`);
+                if (!pill) continue;
+                if (i === level) {
+                    pill.className = "px-3 py-1 rounded-xl text-xs font-bold bg-amber-400 text-slate-900 shadow";
+                } else if (i < level) {
+                    pill.className = "px-3 py-1 rounded-xl text-xs font-bold bg-emerald-400 text-white";
+                } else {
+                    pill.className = "px-3 py-1 rounded-xl text-xs font-bold text-slate-400";
+                }
+            }
+        }
+
+        function updateLevel1Task() {
+            if (level1Index >= level1Keys.length) {
+                playSound('level-up');
+                setInstruction("¡Magnífico! Ya conoces las teclas más importantes. ¡Pasemos al Nivel 2!");
+                setTimeout(() => initLevel(2), 2000);
+                return;
+            }
+
+            const current = level1Keys[level1Index];
+            document.getElementById('target-key-display').innerText = `Presiona: ${current.label}`;
+            
+            // Progress Bar
+            const percent = (level1Index / level1Keys.length) * 100;
+            document.getElementById('key-progress-fill').style.width = `${percent}%`;
+            document.getElementById('key-progress-text').innerText = `${level1Index}/${level1Keys.length}`;
+
+            // Highlight corresponding key on virtual keyboard
+            highlightKeyOnVirtualKeyboard(current.key);
+            setInstruction(current.msg);
+        }
+
+        function highlightKeyOnVirtualKeyboard(keyName) {
+            // Remove previous target highlights
+            document.querySelectorAll('.keyboard-key').forEach(k => k.classList.remove('key-target'));
+
+            const matches = document.querySelectorAll(`[data-key="${keyName}"]`);
+            matches.forEach(m => m.classList.add('key-target'));
+        }
+
+        function updateLevel2Display() {
+            const box = document.getElementById('at-output-box');
+            if (level2Count === 0) {
+                box.innerHTML = `<span class="text-slate-400 text-sm font-normal">Aquí aparecerán tus @</span>`;
+            } else {
+                box.innerHTML = '';
+                for (let i = 0; i < level2Count; i++) {
+                    box.innerHTML += `<span class="bg-emerald-200 text-emerald-800 px-3 py-1 rounded-xl shadow animate-bounce">@</span>`;
+                }
+            }
+
+            if (level2Count >= level2Target) {
+                playSound('level-up');
+                setInstruction("¡Súper bien! Aprendiste el truco secreto del Arroba. ¡Vamos al Nivel 3!");
+                setTimeout(() => initLevel(3), 2000);
+            }
+        }
+
+        function setupLevel3Listeners() {
+            const emailInput = document.getElementById('email-input');
+            emailInput.addEventListener('input', handleEmailInput);
+        }
+
+        function handleEmailInput() {
+            const val = document.getElementById('email-input').value.trim();
+            const icon = document.getElementById('email-status-icon');
+            const feedback = document.getElementById('email-feedback');
+
+            if (val.toLowerCase().endsWith(DOMAIN) && val.length > DOMAIN.length) {
+                icon.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-500"></i>`;
+                feedback.className = "text-center font-bold text-emerald-600 text-sm";
+                feedback.innerText = "¡Perfecto! El correo termina con @winston93.edu.mx";
+                playSound('success');
+
+                setTimeout(() => {
+                    initLevel(4);
+                }, 1500);
+            } else if (val.includes('@') && !val.endsWith(DOMAIN)) {
+                icon.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-500"></i>`;
+                feedback.className = "text-center font-bold text-amber-600 text-sm";
+                feedback.innerText = "Recuerda que la terminación debe ser @winston93.edu.mx";
+            } else {
+                icon.innerHTML = `<i class="fa-solid fa-circle-question text-slate-300"></i>`;
+                feedback.className = "text-center font-bold text-slate-600 text-sm";
+                feedback.innerText = "Escribe tu nombre o usuario seguido de @winston93.edu.mx";
+            }
+        }
+
+        function autoFillDomain() {
+            playSound('key');
+            const emailInput = document.getElementById('email-input');
+            let currentText = emailInput.value;
+
+            if (currentText.includes('@')) {
+                currentText = currentText.split('@')[0];
+            }
+            if (!currentText) currentText = "alumno";
+
+            emailInput.value = currentText + DOMAIN;
+            handleEmailInput();
+        }
+
+        function togglePasswordVisibility() {
+            playSound('key');
+            const passInput = document.getElementById('password-input');
+            const icon = document.getElementById('password-eye-icon');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                passInput.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        }
+
+        function submitLogin() {
+            const pass = document.getElementById('password-input').value;
+            if (pass.length < 3) {
+                playSound('error');
+                setInstruction("Escribe una contraseña un poquito más larga para estar seguro.");
+                return;
+            }
+            playSound('success');
+            initLevel(5);
+        }
+
+        function handleKeyTrigger(keyName) {
+            playSound('key');
+
+            // Visual Key Highlight
+            const matchedButtons = document.querySelectorAll(`[data-key="${keyName}"]`);
+            matchedButtons.forEach(btn => {
+                btn.classList.add('key-active');
+                setTimeout(() => btn.classList.remove('key-active'), 180);
+            });
+
+            // Logic according to active level
+            if (currentLevel === 1) {
+                const current = level1Keys[level1Index];
+                if (keyName.toLowerCase() === current.key.toLowerCase() || 
+                   (current.key === ' ' && keyName === ' ') ||
+                   (current.key === 'AltGraph' && keyName === 'AltGraph')) {
+                    playSound('success');
+                    level1Index++;
+                    updateLevel1Task();
+                }
+            } else if (currentLevel === 2) {
+                if (keyName === 'AltGraph') {
+                    isAltGrPressed = true;
+                    document.getElementById('badge-altgr').className = "bg-amber-300 text-amber-900 text-xl md:text-2xl font-bold px-4 py-3 rounded-2xl border-b-4 border-amber-500 scale-105 transition";
+                }
+                
+                if (keyName.toLowerCase() === 'q' && isAltGrPressed) {
+                    playSound('success');
+                    level2Count++;
+                    updateLevel2Display();
+                    isAltGrPressed = false;
+                    document.getElementById('badge-altgr').className = "bg-slate-200 text-slate-700 text-xl md:text-2xl font-bold px-4 py-3 rounded-2xl border-b-4 border-slate-400";
+                } else if (keyName === '@') {
+                    playSound('success');
+                    level2Count++;
+                    updateLevel2Display();
+                }
+            }
+        }
+
+        // Physical Keyboard Event Listener
+        window.addEventListener('keydown', (e) => {
+            initAudio();
+            let k = e.key;
+            if (e.code === 'AltRight' || e.key === 'AltGraph') k = 'AltGraph';
+            handleKeyTrigger(k);
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'AltRight' || e.key === 'AltGraph') {
+                isAltGrPressed = false;
+                const badge = document.getElementById('badge-altgr');
+                if (badge) badge.className = "bg-slate-200 text-slate-700 text-xl md:text-2xl font-bold px-4 py-3 rounded-2xl border-b-4 border-slate-400";
+            }
+        });
+
+        // Virtual On-Screen Keyboard Click Handler
+        document.querySelectorAll('.keyboard-key').forEach(button => {
+            button.addEventListener('click', () => {
+                initAudio();
+                const keyAttr = button.getAttribute('data-key');
+                handleKeyTrigger(keyAttr);
+
+                // Inject character into active inputs if typing
+                if (currentLevel === 3) {
+                    const input = document.getElementById('email-input');
+                    if (keyAttr === 'Backspace') {
+                        input.value = input.value.slice(0, -1);
+                    } else if (keyAttr.length === 1) {
+                        input.value += keyAttr;
+                    } else if (keyAttr === '@') {
+                        input.value += '@';
+                    }
+                    handleEmailInput();
+                } else if (currentLevel === 4) {
+                    const passInput = document.getElementById('password-input');
+                    if (keyAttr === 'Backspace') {
+                        passInput.value = passInput.value.slice(0, -1);
+                    } else if (keyAttr.length === 1) {
+                        passInput.value += keyAttr;
+                    }
+                }
+            });
+        });
+
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 120,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        function restartGame() {
+            document.getElementById('email-input').value = '';
+            document.getElementById('password-input').value = '';
+            initLevel(1);
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            initLevel(1);
+        };
+    </script>
+</body>
+</html>

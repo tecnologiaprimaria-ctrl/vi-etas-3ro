@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Interactivo Word: Viñetas y Numeración</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        office: {
+                            blue: '#2b579a',
+                            darkblue: '#1e3a8a',
+                            header: '#102a43',
+                            ribbon: '#f3f3f3',
+                            border: '#d2d6dc',
+                            active: '#c8c6c4',
+                            paper: '#ffffff'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            user-select: none;
+        }
+
+        /* Pulsing Spotlight / Highlight effect for hints */
+        .spotlight-hint {
+            animation: pulseGlow 1.2s infinite alternate !important;
+            box-shadow: 0 0 0 4px #f59e0b, 0 0 20px #f59e0b !important;
+            border-color: #f59e0b !important;
+            z-index: 60 !important;
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(1); box-shadow: 0 0 0 2px #f59e0b, 0 0 10px #f59e0b; }
+            100% { transform: scale(1.05); box-shadow: 0 0 0 6px #f59e0b, 0 0 25px #f59e0b; }
+        }
+
+        .word-paper {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            min-height: 1100px;
+        }
+
+        .symbol-grid-box {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .symbol-item {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .symbol-item:hover {
+            background-color: #2b579a;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .symbol-item.selected {
+            background-color: #1d4ed8;
+            color: white;
+            outline: 2px solid #1e40af;
+        }
+
+        /* Custom Bullet List Styles inside Word Document */
+        .interactive-list {
+            padding-left: 28px;
+            transition: all 0.2s ease;
+        }
+
+        .interactive-list li {
+            position: relative;
+            margin-bottom: 6px;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .interactive-list li::before {
+            position: absolute;
+            left: -26px;
+            top: 0;
+            width: 22px;
+            text-align: center;
+            display: inline-block;
+            font-weight: bold;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #bbb; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #999; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden text-gray-800">
+
+    <!-- TOP MS WORD TITLE BAR -->
+    <header class="bg-office-blue text-white flex items-center justify-between px-4 py-1.5 shadow-md z-30 shrink-0">
+        <div class="flex items-center space-x-3">
+            <i class="fa-solid fa-file-word text-xl text-white"></i>
+            <span class="font-bold text-sm tracking-wide">Microsoft Word - Actividad_Viñetas_y_Numeracion.docx</span>
+            <span class="bg-blue-900/60 text-blue-100 text-[11px] px-2.5 py-0.5 rounded-full border border-blue-400/30">
+                <i class="fa-solid fa-graduation-cap mr-1"></i> Modo Interactivo Edu
+            </span>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <button onclick="toggleMode()" id="mode-toggle-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-3 py-1.5 rounded-md shadow flex items-center gap-1.5 transition">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span id="mode-toggle-text">Cambiar a Práctica Libre</span>
+            </button>
+            <div class="h-4 w-px bg-blue-400/40"></div>
+            <div class="flex space-x-2 text-xs">
+                <button title="Minimizar" class="hover:bg-blue-700/80 px-2 py-1 rounded"><i class="fa-solid fa-minus"></i></button>
+                <button title="Maximizar" class="hover:bg-blue-700/80 px-2 py-1 rounded"><i class="fa-regular fa-square"></i></button>
+                <button title="Cerrar" class="hover:bg-red-600 px-2 py-1 rounded"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <!-- RIBBON TABS -->
+    <nav class="bg-office-ribbon border-b border-gray-300 px-4 pt-1 flex text-xs font-semibold z-20 shrink-0">
+        <button class="px-3 py-1 bg-office-blue text-white rounded-t">Archivo</button>
+        <button class="px-4 py-1.5 text-office-blue border-b-2 border-office-blue bg-white rounded-t shadow-sm">Inicio</button>
+        <button class="px-3 py-1.5 text-gray-600 hover:bg-gray-200 rounded-t">Insertar</button>
+        <button class="px-3 py-1.5 text-gray-600 hover:bg-gray-200 rounded-t">Diseño</button>
+        <button class="px-3 py-1.5 text-gray-600 hover:bg-gray-200 rounded-t">Disposición</button>
+        <button class="px-3 py-1.5 text-gray-600 hover:bg-gray-200 rounded-t">Vista</button>
+    </nav>
+
+    <!-- RIBBON TOOLBAR (SECCIÓN PARRAFO DESTACADA) -->
+    <div class="bg-white border-b border-gray-300 px-4 py-2 flex items-center space-x-6 text-xs shadow-sm z-20 shrink-0 overflow-x-auto">
+        
+        <!-- Clipboard Group -->
+        <div class="flex items-center space-x-1 pr-4 border-r border-gray-200 shrink-0">
+            <button class="flex flex-col items-center justify-center p-1 hover:bg-gray-100 rounded text-gray-700">
+                <i class="fa-solid fa-paste text-blue-700 text-base mb-0.5"></i>
+                <span>Pegar</span>
+            </button>
+            <div class="flex flex-col space-y-1 text-[11px] text-gray-600">
+                <span class="hover:bg-gray-100 px-1.5 rounded cursor-pointer"><i class="fa-solid fa-scissors"></i> Cortar</span>
+                <span class="hover:bg-gray-100 px-1.5 rounded cursor-pointer"><i class="fa-regular fa-copy"></i> Copiar</span>
+            </div>
+        </div>
+
+        <!-- Font Group -->
+        <div class="flex flex-col space-y-1.5 pr-4 border-r border-gray-200 shrink-0">
+            <div class="flex items-center space-x-1">
+                <select class="border border-gray-300 rounded px-1.5 py-0.5 text-xs bg-white">
+                    <option>Calibri</option>
+                    <option>Arial</option>
+                    <option>Segoe UI</option>
+                </select>
+                <select class="border border-gray-300 rounded px-1 py-0.5 text-xs bg-white">
+                    <option>11</option>
+                    <option>12</option>
+                    <option>14</option>
+                </select>
+            </div>
+            <div class="flex items-center space-x-1">
+                <button class="px-1.5 py-0.5 font-bold hover:bg-gray-200 rounded">N</button>
+                <button class="px-1.5 py-0.5 italic hover:bg-gray-200 rounded">K</button>
+                <button class="px-1.5 py-0.5 underline hover:bg-gray-200 rounded">S</button>
+            </div>
+        </div>
+
+        <!-- PARAGRAPH GROUP (HERRAMIENTA CLAVE DE VIÑETAS Y NUMERACIÓN) -->
+        <div id="ribbon-paragraph-section" class="flex flex-col justify-between bg-blue-50/80 p-2 rounded-lg border-2 border-blue-300 relative shrink-0 transition-all">
+            <div class="flex items-center space-x-3">
+                
+                <!-- 1. BULLETS DROPDOWN BUTTON -->
+                <div class="relative">
+                    <div class="flex items-center bg-white border border-gray-300 rounded shadow-sm hover:border-blue-500">
+                        <button id="btn-ribbon-bullet-quick" onclick="quickApplyBullet()" title="Aplicar Viñetas Rápidas" class="p-1.5 hover:bg-blue-100 border-r border-gray-200">
+                            <i class="fa-solid fa-list-ul text-office-blue text-base"></i>
+                        </button>
+                        <button id="btn-ribbon-bullet-menu" onclick="toggleDropdown('dropdown-bullets')" title="Menú de Viñetas" class="px-1.5 py-2 hover:bg-blue-100">
+                            <i class="fa-solid fa-caret-down text-gray-600 text-[10px]"></i>
+                        </button>
+                    </div>
+
+                    <!-- Bullets Dropdown Menu -->
+                    <div id="dropdown-bullets" class="hidden absolute top-full left-0 mt-1 w-64 bg-white border border-gray-300 shadow-xl rounded-md z-50 p-2.5">
+                        <div class="text-[11px] font-bold text-gray-500 mb-1.5">Biblioteca de viñetas</div>
+                        <div class="grid grid-cols-4 gap-1.5 mb-2">
+                            <button onclick="applyPresetBullet('●')" class="p-2 border hover:bg-blue-50 hover:border-blue-500 text-center rounded text-base">●</button>
+                            <button onclick="applyPresetBullet('○')" class="p-2 border hover:bg-blue-50 hover:border-blue-500 text-center rounded text-base">○</button>
+                            <button onclick="applyPresetBullet('■')" class="p-2 border hover:bg-blue-50 hover:border-blue-500 text-center rounded text-base">■</button>
+                            <button onclick="applyPresetBullet('✓')" class="p-2 border hover:bg-blue-50 hover:border-blue-500 text-center rounded text-base text-green-600">✓</button>
+                        </div>
+                        <hr class="my-1.5 border-gray-200">
+                        <button id="btn-define-new-bullet" onclick="openDefineBulletModal()" class="w-full text-left px-2 py-1.5 hover:bg-blue-50 text-office-blue font-semibold text-xs rounded flex items-center gap-2">
+                            <i class="fa-solid fa-plus-circle"></i>
+                            <span>Definir nueva viñeta...</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. NUMBERING DROPDOWN BUTTON -->
+                <div class="relative">
+                    <div class="flex items-center bg-white border border-gray-300 rounded shadow-sm hover:border-blue-500">
+                        <button id="btn-ribbon-number-quick" onclick="applyPresetNumbering('decimal')" title="Aplicar Numeración" class="p-1.5 hover:bg-blue-100 border-r border-gray-200">
+                            <i class="fa-solid fa-list-ol text-office-blue text-base"></i>
+                        </button>
+                        <button id="btn-ribbon-number-menu" onclick="toggleDropdown('dropdown-numbering')" title="Menú de Numeración" class="px-1.5 py-2 hover:bg-blue-100">
+                            <i class="fa-solid fa-caret-down text-gray-600 text-[10px]"></i>
+                        </button>
+                    </div>
+
+                    <!-- Numbering Dropdown Menu -->
+                    <div id="dropdown-numbering" class="hidden absolute top-full left-0 mt-1 w-60 bg-white border border-gray-300 shadow-xl rounded-md z-50 p-2">
+                        <div class="text-[11px] font-bold text-gray-500 mb-1.5">Biblioteca de numeración</div>
+                        <div class="space-y-1">
+                            <button id="btn-num-decimal" onclick="applyPresetNumbering('decimal')" class="w-full text-left p-1.5 border hover:bg-blue-50 hover:border-blue-500 rounded font-medium text-xs flex justify-between">
+                                <span>1. 2. 3.</span>
+                                <span class="text-gray-400 text-[10px]">Decimal</span>
+                            </button>
+                            <button id="btn-num-roman" onclick="applyPresetNumbering('roman')" class="w-full text-left p-1.5 border hover:bg-blue-50 hover:border-blue-500 rounded font-medium text-xs flex justify-between">
+                                <span>I. II. III.</span>
+                                <span class="text-gray-400 text-[10px]">Romana</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alignment Tools -->
+                <div class="flex items-center space-x-1">
+                    <button class="p-1.5 hover:bg-blue-100 rounded text-gray-700" title="Alinear a la izquierda"><i class="fa-solid fa-align-left"></i></button>
+                    <button class="p-1.5 hover:bg-blue-100 rounded text-gray-700" title="Centrar"><i class="fa-solid fa-align-center"></i></button>
+                    <button class="p-1.5 hover:bg-blue-100 rounded text-gray-700" title="Disminuir Sangría"><i class="fa-solid fa-indent rotate-180"></i></button>
+                    <button class="p-1.5 hover:bg-blue-100 rounded text-gray-700" title="Aumentar Sangría"><i class="fa-solid fa-indent"></i></button>
+                </div>
+            </div>
+            <span class="text-[10px] font-extrabold text-office-blue text-center uppercase tracking-wider mt-1">Párrafo (Sección Principal)</span>
+        </div>
+
+    </div>
+
+    <!-- MAIN WORKSPACE CONTAINER -->
+    <div class="flex-1 flex overflow-hidden">
+
+        <!-- LEFT SIDEBAR: ASISTENTE INTERACTIVO DE MISIONES (PASO A PASO) -->
+        <aside id="guided-assistant-panel" class="w-80 md:w-96 bg-white border-r border-gray-300 flex flex-col shadow-lg z-10 shrink-0">
+            
+            <!-- Assistant Header -->
+            <div class="bg-office-darkblue text-white p-3.5 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white shadow">
+                        <i class="fa-solid fa-robot text-base"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-sm">Asistente de Word</h2>
+                        <p class="text-[10px] text-blue-200">Guía Interactiva Paso a Paso</p>
+                    </div>
+                </div>
+                <span id="step-badge" class="bg-amber-400 text-gray-900 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
+                    Paso 1 / 10
+                </span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="bg-gray-100 h-2 w-full overflow-hidden border-b border-gray-200">
+                <div id="progress-bar-fill" class="bg-green-500 h-full w-0 transition-all duration-500"></div>
+            </div>
+
+            <!-- Mission Active Card -->
+            <div class="p-4 flex-1 overflow-y-auto space-y-4">
+                
+                <div id="mission-card" class="bg-blue-50 border-2 border-blue-300 rounded-xl p-4 shadow-sm relative">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-extrabold uppercase text-blue-800 tracking-wide flex items-center gap-1.5">
+                            <i class="fa-solid fa-bullseye text-blue-600"></i> Misión Actual
+                        </span>
+                        <span id="target-list-name-badge" class="text-[10px] font-bold bg-blue-200 text-blue-900 px-2 py-0.5 rounded">
+                            Lista 1
+                        </span>
+                    </div>
+
+                    <h3 id="mission-title" class="font-bold text-base text-gray-900 mb-1">
+                        1. Biggest Stars in Milky Way Galaxy
+                    </h3>
+                    
+                    <p id="mission-description" class="text-xs text-gray-700 leading-relaxed mb-3">
+                        Haz clic sobre la lista en el documento de Word para seleccionarla. Luego dirígete al menú de viñetas y aplícale:
+                    </p>
+
+                    <!-- Instruction Checklist -->
+                    <div class="bg-white rounded-lg p-3 border border-blue-200 space-y-1.5 text-xs text-gray-800">
+                        <div class="flex items-center gap-2 font-medium" id="req-font">
+                            <i class="fa-regular fa-circle-check text-gray-400"></i>
+                            <span>Fuente: <strong id="req-font-val" class="text-blue-700">Wingdings 2</strong></span>
+                        </div>
+                        <div class="flex items-center gap-2 font-medium" id="req-symbol">
+                            <i class="fa-regular fa-circle-check text-gray-400"></i>
+                            <span>Símbolo: <strong id="req-symbol-val" class="text-blue-700">#234 (★)</strong></span>
+                        </div>
+                        <div class="flex items-center gap-2 font-medium" id="req-color">
+                            <i class="fa-regular fa-circle-check text-gray-400"></i>
+                            <span>Color: <strong id="req-color-val" class="text-amber-600">Naranja</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Hint / Pista Button -->
+                    <button onclick="triggerVisualHint()" class="mt-4 w-full bg-amber-400 hover:bg-amber-500 text-gray-900 font-bold text-xs py-2 px-3 rounded-lg shadow flex items-center justify-center gap-2 transition">
+                        <i class="fa-solid fa-lightbulb text-amber-900 text-sm"></i>
+                        <span>¡Dame una Pista! (Resaltar dónde hacer clic)</span>
+                    </button>
+                </div>
+
+                <!-- Helper Tip Box -->
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900 space-y-1">
+                    <p class="font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-circle-info text-amber-600"></i>
+                        ¿Cómo usar este simulador?
+                    </p>
+                    <p class="text-[11px] text-amber-800 leading-normal">
+                        1. Selecciona la lista correspondiente en la hoja de papel de la derecha.<br>
+                        2. Usa el botón de <strong>Viñetas</strong> o <strong>Numeración</strong> en la barra superior igual que en Word.
+                    </p>
+                </div>
+
+            </div>
+
+            <!-- Assistant Navigation Controls -->
+            <div class="p-3 bg-gray-50 border-t border-gray-300 flex items-center justify-between">
+                <button onclick="prevStep()" id="btn-prev-step" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded text-xs font-bold disabled:opacity-40">
+                    <i class="fa-solid fa-arrow-left mr-1"></i> Anterior
+                </button>
+                <button onclick="nextStep()" id="btn-next-step" class="px-4 py-1.5 bg-office-blue hover:bg-office-darkblue text-white rounded text-xs font-bold shadow">
+                    Siguiente <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+
+        </aside>
+
+        <!-- RIGHT SIDE: VIRTUAL WORD DOCUMENT PAPER CANVAS -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col items-center bg-gray-200">
+            
+            <!-- Floating Notice Banner -->
+            <div class="w-full max-w-3xl mb-3 flex items-center justify-between bg-white px-4 py-2 rounded-lg shadow-sm border border-gray-300 text-xs text-gray-600">
+                <span class="flex items-center gap-1.5 font-medium">
+                    <i class="fa-solid fa-i-cursor text-blue-600"></i>
+                    Documento de Word editable. Haz clic en cualquier lista para activarla.
+                </span>
+                <span id="selected-status-pill" class="bg-gray-100 text-gray-700 px-2.5 py-0.5 rounded-full font-bold border">
+                    Seleccionado: Ninguno
+                </span>
+            </div>
+
+            <!-- WORD VIRTUAL SHEET PAPER -->
+            <div class="word-paper w-full max-w-3xl bg-white p-8 md:p-14 relative rounded-sm border border-gray-300 my-2" id="document-paper">
+                
+                <!-- Document Header Title -->
+                <div class="border-b-2 border-gray-800 pb-4 mb-8 text-center">
+                    <h1 class="text-2xl font-black text-gray-900 tracking-wide uppercase">Bullets and Numbering Activity</h1>
+                    <p class="text-xs text-gray-500 font-semibold mt-1">Práctica Guiada e Interactiva de Microsoft Word en Español</p>
+                </div>
+
+                <!-- LISTS CONTAINER -->
+                <div class="space-y-8" id="lists-container">
+                    
+                    <!-- LIST 1 -->
+                    <div id="list-wrapper-1" onclick="selectList(1)" class="p-3 rounded-lg border-2 border-transparent hover:border-blue-300 transition cursor-pointer relative group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-base mb-2">Biggest Stars in Milky Way Galaxy</h3>
+                                <ul id="list-ul-1" class="interactive-list text-gray-800">
+                                    <li>UY Scuti</li>
+                                    <li>V766 Centauri Aa</li>
+                                    <li>KY Cygni</li>
+                                    <li>AH Scorpii</li>
+                                    <li>VV Cephei</li>
+                                </ul>
+                            </div>
+                            <span id="badge-status-1" class="text-[10px] bg-gray-100 text-gray-500 border px-2 py-0.5 rounded-full font-bold">Sin formato</span>
+                        </div>
+                    </div>
+
+                    <!-- LIST 2 -->
+                    <div id="list-wrapper-2" onclick="selectList(2)" class="p-3 rounded-lg border-2 border-transparent hover:border-blue-300 transition cursor-pointer relative group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-base mb-2">Best Beaches in the World</h3>
+                                <ul id="list-ul-2" class="interactive-list text-gray-800">
+                                    <li>Bora Bora</li>
+                                    <li>Fiji</li>
+                                    <li>Mauritius</li>
+                                    <li>Tahiti</li>
+                                    <li>Maldives</li>
+                                </ul>
+                            </div>
+                            <span id="badge-status-2" class="text-[10px] bg-gray-100 text-gray-500 border px-2 py-0.5 rounded-full font-bold">Sin formato</span>
+                        </div>
+                    </div>
+
+                    <!-- LIST 3 -->
+                    <div id="list-wrapper-3" onclick="selectList(3)" class="p-3 rounded-lg border-2 border-transparent hover:border-blue-300 transition cursor-pointer relative group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-base mb-2">Supplies Needed for Math Class</h3>
+                                <ul id="list-ul-3" class="interactive-list text-gray-800">
+                                    <li>Scissors</li>
+                                    <li>Glue</li>
+                                    <li>Composition Book</li>
+                                    <li>Pencils</li>
+                                    <li>Calculator</li>
+                                </ul>
+                            </div>
+                            <span id="badge-status-3" class="text-[10px] bg-gray-100 text-gray-500 border px-2 py-0.5 rounded-full font-bold">Sin formato</span>
+                        </div>
+                    </div>
+
+                    <!-- LIST 4 -->
+                    <div id="list-wrapper-4" onclick="selectList(4)" class="p-3 rounded-lg border-2 border-transparent hover:border-blue-300 transition cursor-pointer relative group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-base mb-2">Top Children's Book Series</h3>
+                                <ul id="list-ul-4" class="interactive-list text-gray-800">
+                                    <li>Diary of a Wimpy Kid</li>
+                                    <li>Harry Potter</li>
+                                    <li>Crave</li>
+                                    <li>Percy Jackson & the Olympians</li>
+                                    <li>Wings of Fire</li>
+                                </ul>
+                            </div>
+                            <span id="badge-status-4" class="text-[10px] bg-gray-100 text-gray-500 border px-2 py-0.5 rounded-full font-bold">Sin formato</span>
+                        </div>
+                    </div>
+
+                    <!-- LIST 5 -->
+                    <div id="list-wrapper-5" onclick="selectList(5)" class="p-3 rounded-lg border-2 border-transparent hover:border-blue-300 transition cursor-pointer relative group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-base mb-2">Top Airlines in the United States</h3>
+                                <ul id="list-ul-5" class="interactive-list text-gray-800">
+                                    <li>Delta Airlines</li>
+                                    <li>JetBlue</li>
+                                    <li>Southwest Airlines</li>
+                                    <li>United Airlines</li>
+                                    <li>Alaska Airlines</li>
+                                </ul>
+                            </div>
+                            <span id="badge-status-5" class="text-[10px] bg-gray-100 text-gray-500 border px-2 py-0.5 rounded-full font-bold">Sin formato</span>
+                        </div>
+                    </div>
+
+                    <!-- LIST 6 -->
+                    <div id="list-wrapper-6" onclick="selectList(6)" class="p-3 rounded-lg border-2 border-transparent hover:border-blue-300 transition cursor-pointer relative group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-base mb-2">Moon Phases</h3>
+                                <ul id="list-ul-6" class="interactive-list text-gray-800">
+                                    <li>Waxing Crescent</li>
+                                    <li>Waxing Gibbous</li>
+                                    <li>Full Moon</li>
+                                    <li>Waning Gibbous</li>
+                                    <li>Waning Crescent</li>
+                                </ul>
+                            </div>
+                            <span id="badge-status-6" class="text-[10px] bg-gray-100 text-gray-500 border px-2 py-0.5 rounded-full font-bold">Sin formato</span>
+                        </div>
+                    </div>
+
+                    <!-- LIST 7 -->
+                    <div id="list-wrapper-7" onclick="selectList(7)" class="p-3 rounded-lg border-2 border-transparent hover:border-blue-300 transition cursor-pointer relative group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-base mb-2">Top Video Games of All Time</h3>
+                                <ul id="list-ul-7" class="interactive-list text-gray-800">
+                                    <li>The Legend of Zelda</li>
+                                    <li>Super Mario World</li>
+                                    <li>Super Metroid</li>
+                                    <li>Half-Life</li>
+                                    <li>Undertale</li>
+                                </ul>
+                            </div>
+                            <span id="badge-status-7" class="text-[10px] bg-gray-100 text-gray-500 border px-2 py-0.5 rounded-full font-bold">Sin formato</span>
+                        </div>
+                    </div>
+
+                    <!-- LIST 8 -->
+                    <div id="list-wrapper-8" onclick="selectList(8)" class="p-3 rounded-lg border-2 border-transparent hover:border-blue-300 transition cursor-pointer relative group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-base mb-2">Favorite Dog Breeds</h3>
+                                <ul id="list-ul-8" class="interactive-list text-gray-800">
+                                    <li>Labrador Retriever</li>
+                                    <li>Bulldog</li>
+                                    <li>Golden Retriever</li>
+                                    <li>Poodle</li>
+                                    <li>Cocker Spaniel</li>
+                                </ul>
+                            </div>
+                            <span id="badge-status-8" class="text-[10px] bg-gray-100 text-gray-500 border px-2 py-0.5 rounded-full font-bold">Sin formato</span>
+                        </div>
+                    </div>
+
+                    <!-- LIST 9 -->
+                    <div id="list-wrapper-9" onclick="selectList(9)" class="p-3 rounded-lg border-2 border-transparent hover:border-blue-300 transition cursor-pointer relative group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-base mb-2">Top Vintage Cars</h3>
+                                <ul id="list-ul-9" class="interactive-list text-gray-800">
+                                    <li>Chevrolet Camaro</li>
+                                    <li>Fiat 124 Spider</li>
+                                    <li>Jaguar E-Type</li>
+                                    <li>Lamborghini Miura</li>
+                                    <li>Aston Martin DB4</li>
+                                </ul>
+                            </div>
+                            <span id="badge-status-9" class="text-[10px] bg-gray-100 text-gray-500 border px-2 py-0.5 rounded-full font-bold">Sin formato</span>
+                        </div>
+                    </div>
+
+                    <!-- LIST 10 -->
+                    <div id="list-wrapper-10" onclick="selectList(10)" class="p-3 rounded-lg border-2 border-transparent hover:border-blue-300 transition cursor-pointer relative group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-gray-900 text-base mb-2">Top College Majors</h3>
+                                <ul id="list-ul-10" class="interactive-list text-gray-800">
+                                    <li>Computer Science</li>
+                                    <li>Communications</li>
+                                    <li>Government/Political Science</li>
+                                    <li>Business</li>
+                                    <li>Economics</li>
+                                </ul>
+                            </div>
+                            <span id="badge-status-10" class="text-[10px] bg-gray-100 text-gray-500 border px-2 py-0.5 rounded-full font-bold">Sin formato</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- SECTION: ¡AHORA ES TU TURNO! (PRACTICA LIBRE) -->
+                <div class="mt-14 pt-8 border-t-2 border-dashed border-gray-300">
+                    <div class="bg-office-blue text-white p-4 rounded-t-lg flex items-center justify-between">
+                        <div>
+                            <h2 class="font-bold text-lg flex items-center gap-2">
+                                <i class="fa-solid fa-pen-nib"></i>
+                                ¡Ahora es tu turno! (Crea tus 5 listas libres)
+                            </h2>
+                            <p class="text-xs text-blue-100 mt-0.5">Escribe 5 listas con 5 elementos cada una y aplícales las viñetas que desees.</p>
+                        </div>
+                    </div>
+
+                    <div id="free-practice-container" class="border border-t-0 border-gray-300 bg-gray-50/50 p-4 rounded-b-lg space-y-6">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL DEFINIR NUEVA VIÑETA -->
+    <div id="modal-define-bullet" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl border border-gray-400 w-full max-w-md text-xs text-gray-800 animate-fadeIn">
+            <!-- Header -->
+            <div class="bg-office-blue text-white px-4 py-2.5 rounded-t-lg flex items-center justify-between font-bold">
+                <span class="flex items-center gap-2">
+                    <i class="fa-solid fa-[#000] fa-list-ul"></i> Definir nueva viñeta
+                </span>
+                <button onclick="closeModal('modal-define-bullet')" class="text-white hover:bg-blue-700 px-2 py-0.5 rounded"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="p-5 space-y-4">
+                <p class="text-gray-600 font-medium">Carácter de viñeta</p>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="btn-modal-open-symbol" onclick="openSymbolDialog()" class="p-3 border-2 border-gray-300 hover:border-office-blue rounded-lg bg-gray-50 hover:bg-blue-50 flex flex-col items-center justify-center gap-1.5 transition">
+                        <i class="fa-solid fa-icons text-2xl text-office-blue"></i>
+                        <span class="font-bold text-xs text-gray-800">Símbolo...</span>
+                    </button>
+                    <button id="btn-modal-open-picture" onclick="openPictureDialog()" class="p-3 border-2 border-gray-300 hover:border-office-blue rounded-lg bg-gray-50 hover:bg-blue-50 flex flex-col items-center justify-center gap-1.5 transition">
+                        <i class="fa-regular fa-image text-2xl text-green-600"></i>
+                        <span class="font-bold text-xs text-gray-800">Imagen / Clip Art...</span>
+                    </button>
+                </div>
+
+                <!-- Preview Area -->
+                <div class="border border-gray-300 p-3 rounded-lg bg-gray-50">
+                    <span class="font-bold text-gray-500 block mb-1 text-[11px]">Vista previa de la viñeta:</span>
+                    <div class="flex items-center space-x-3 bg-white p-2.5 border border-gray-200 rounded">
+                        <span id="modal-bullet-preview-char" class="text-2xl font-bold text-amber-500">★</span>
+                        <span class="text-gray-500 italic text-xs">Texto de la lista de ejemplo...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-100 px-4 py-3 rounded-b-lg border-t border-gray-300 flex justify-end space-x-2">
+                <button id="btn-confirm-bullet" onclick="confirmCustomBullet()" class="px-5 py-1.5 bg-office-blue hover:bg-office-darkblue text-white font-bold rounded shadow transition">Aceptar</button>
+                <button onclick="closeModal('modal-define-bullet')" class="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SELECCIONAR SÍMBOLO -->
+    <div id="modal-symbol-select" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl border border-gray-400 w-full max-w-lg text-xs text-gray-800">
+            <div class="bg-office-blue text-white px-4 py-2.5 rounded-t-lg flex items-center justify-between font-bold">
+                <span>Seleccionar Símbolo</span>
+                <button onclick="closeModal('modal-symbol-select')" class="text-white hover:bg-blue-700 px-2 py-0.5 rounded"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="p-5 space-y-4">
+                <div class="flex items-center space-x-3 bg-gray-50 p-2.5 rounded-lg border border-gray-200">
+                    <label class="font-bold text-gray-700">Fuente:</label>
+                    <select id="symbol-font-dropdown" onchange="changeSymbolFont()" class="border border-gray-300 rounded px-2 py-1 bg-white font-bold text-office-blue">
+                        <option value="Wingdings 2">Wingdings 2</option>
+                        <option value="Webdings">Webdings</option>
+                        <option value="Wingdings">Wingdings</option>
+                        <option value="Wingdings 3">Wingdings 3</option>
+                    </select>
+
+                    <label class="font-bold text-gray-700 ml-2">Color:</label>
+                    <input type="color" id="symbol-color-picker" value="#f97316" onchange="updateSymbolModalPreview()" class="w-7 h-7 border border-gray-300 rounded cursor-pointer p-0">
+                </div>
+
+                <div class="border border-gray-300 rounded-lg p-2 bg-white">
+                    <div id="symbols-grid-container" class="symbol-grid-box">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center bg-blue-50 p-2.5 rounded-lg border border-blue-200">
+                    <span class="text-gray-700 font-medium">Símbolo elegido: <strong id="selected-symbol-code-text" class="text-blue-800">#234</strong></span>
+                    <span id="selected-symbol-preview-display" class="text-2xl font-extrabold text-amber-500">★</span>
+                </div>
+            </div>
+
+            <div class="bg-gray-100 px-4 py-3 rounded-b-lg border-t border-gray-300 flex justify-end space-x-2">
+                <button id="btn-apply-symbol" onclick="saveSymbolAndBack()" class="px-5 py-1.5 bg-office-blue hover:bg-office-darkblue text-white font-bold rounded shadow">Aceptar</button>
+                <button onclick="closeModal('modal-symbol-select')" class="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SELECCIONAR IMAGEN / CLIP ART -->
+    <div id="modal-picture-select" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-2xl border border-gray-400 w-full max-w-md text-xs text-gray-800">
+            <div class="bg-office-blue text-white px-4 py-2.5 rounded-t-lg flex items-center justify-between font-bold">
+                <span>Insertar imágenes - Búsqueda en línea (Clip Art)</span>
+                <button onclick="closeModal('modal-picture-select')" class="text-white hover:bg-blue-700 px-2 py-0.5 rounded"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="p-5 space-y-3">
+                <p class="text-gray-600 font-medium">Selecciona una imagen de Clip Art para la viñeta:</p>
+                <div id="picture-clipart-grid" class="grid grid-cols-3 gap-3 border border-gray-300 p-3 rounded-lg bg-gray-50">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <div class="bg-gray-100 px-4 py-3 rounded-b-lg border-t border-gray-300 flex justify-end space-x-2">
+                <button id="btn-apply-picture" onclick="savePictureAndBack()" class="px-5 py-1.5 bg-office-blue hover:bg-office-darkblue text-white font-bold rounded shadow">Insertar</button>
+                <button onclick="closeModal('modal-picture-select')" class="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA & STATE CONFIGURATION ---
+        let isGuidedMode = true;
+        let currentStepIndex = 0;
+        let selectedListId = 1;
+
+        let activeSymbol = { char: "★", code: 234, font: "Wingdings 2", color: "#f97316" };
+        let activePicture = null;
+
+        // Steps matching the exercise PDF requirements
+        const steps = [
+            {
+                id: 1,
+                listId: 1,
+                title: "1. Biggest Stars in Milky Way Galaxy",
+                desc: "Aplica viñeta de Símbolo: Wingdings 2, código #234, Color Naranja.",
+                targetFont: "Wingdings 2",
+                targetCode: 234,
+                targetColor: "Naranja",
+                type: "symbol"
+            },
+            {
+                id: 2,
+                listId: 2,
+                title: "2. Best Beaches in the World",
+                desc: "Aplica viñeta de Símbolo: Webdings, código #74 (Palmera), Color Verde.",
+                targetFont: "Webdings",
+                targetCode: 74,
+                targetColor: "Verde",
+                type: "symbol"
+            },
+            {
+                id: 3,
+                listId: 3,
+                title: "3. Supplies Needed for Math Class",
+                desc: "Aplica viñeta de Símbolo: Wingdings, código #34 (Lápiz/Tijera), Color Azul.",
+                targetFont: "Wingdings",
+                targetCode: 34,
+                targetColor: "Azul",
+                type: "symbol"
+            },
+            {
+                id: 4,
+                listId: 4,
+                title: "4. Top Children's Book Series",
+                desc: "Aplica viñeta de Símbolo: Webdings, código #168 (Libro), Color Rojo Oscuro.",
+                targetFont: "Webdings",
+                targetCode: 168,
+                targetColor: "Rojo Oscuro",
+                type: "symbol"
+            },
+            {
+                id: 5,
+                listId: 5,
+                title: "5. Top Airlines in the United States",
+                desc: "Aplica viñeta de Símbolo: Wingdings 3, código #112 (Avión/Flecha), Color Azul Oscuro.",
+                targetFont: "Wingdings 3",
+                targetCode: 112,
+                targetColor: "Azul Oscuro",
+                type: "symbol"
+            },
+            {
+                id: 6,
+                listId: 6,
+                title: "6. Moon Phases",
+                desc: "Definir nueva viñeta -> Imagen -> Clip Art de Luna (🌙).",
+                targetPicture: "🌙",
+                type: "picture"
+            },
+            {
+                id: 7,
+                listId: 7,
+                title: "7. Top Video Games of All Time",
+                desc: "Definir nueva viñeta -> Imagen -> Clip Art de Control de Videojuego (🎮).",
+                targetPicture: "🎮",
+                type: "picture"
+            },
+            {
+                id: 8,
+                listId: 8,
+                title: "8. Favorite Dog Breeds",
+                desc: "Definir nueva viñeta -> Imagen -> Clip Art de Perro (🐶).",
+                targetPicture: "🐶",
+                type: "picture"
+            },
+            {
+                id: 9,
+                listId: 9,
+                title: "9. Top Vintage Cars",
+                desc: "Aplica Lista Numerada básica en la biblioteca (1., 2., 3.).",
+                type: "numbering_decimal"
+            },
+            {
+                id: 10,
+                listId: 10,
+                title: "10. Top College Majors",
+                desc: "Aplica Lista con Números Romanos (I., II., III.).",
+                type: "numbering_roman"
+            }
+        ];
+
+        // Symbols Database
+        const fontSymbolsData = {
+            "Wingdings 2": [
+                { char: "★", code: 234 }, { char: "✶", code: 235 }, { char: "✦", code: 236 },
+                { char: "✪", code: 237 }, { char: "✽", code: 238 }, { char: "✹", code: 239 }
+            ],
+            "Webdings": [
+                { char: "🌴", code: 74 }, { char: "📖", code: 168 }, { char: "🏖️️", code: 75 },
+                { char: "🚀", code: 110 }, { char: "🏆", code: 120 }, { char: "🔔", code: 130 }
+            ],
+            "Wingdings": [
+                { char: "✏️", code: 34 }, { char: "✂️", code: 33 }, { char: "✈️", code: 40 },
+                { char: "✉️", code: 41 }, { char: "💣", code: 50 }, { char: "❄️", code: 60 }
+            ],
+            "Wingdings 3": [
+                { char: "✈️", code: 112 }, { char: "➔", code: 113 }, { char: "➜", code: 114 },
+                { char: "▲", code: 115 }, { char: "►", code: 116 }, { char: "▼", code: 117 }
+            ]
+        };
+
+        const clipArtData = [
+            { name: "Luna Clip Art", emoji: "🌙" },
+            { name: "Control Videojuego", emoji: "🎮" },
+            { name: "Perro Clip Art", emoji: "🐶" },
+            { name: "Coche Clásico", emoji: "🚗" },
+            { name: "Libro Escolar", emoji: "📚" },
+            { name: "Estrella Brillante", emoji: "⭐" }
+        ];
+
+        // INITIALIZATION
+        window.onload = function() {
+            renderStepMission();
+            setupFreePracticeSection();
+            selectList(1);
+            loadSymbolGrid();
+            loadPictureGrid();
+        };
+
+        function renderStepMission() {
+            const step = steps[currentStepIndex];
+            if (!step) return;
+
+            document.getElementById('step-badge').innerText = `Paso ${currentStepIndex + 1} de ${steps.length}`;
+            document.getElementById('progress-bar-fill').style.width = `${((currentStepIndex + 1) / steps.length) * 100}%`;
+
+            document.getElementById('target-list-name-badge').innerText = `Lista ${step.listId}`;
+            document.getElementById('mission-title').innerText = step.title;
+            document.getElementById('mission-description').innerText = step.desc;
+
+            const reqFont = document.getElementById('req-font');
+            const reqSymbol = document.getElementById('req-symbol');
+            const reqColor = document.getElementById('req-color');
+
+            if (step.type === 'symbol') {
+                reqFont.classList.remove('hidden');
+                reqSymbol.classList.remove('hidden');
+                reqColor.classList.remove('hidden');
+
+                document.getElementById('req-font-val').innerText = step.targetFont;
+                document.getElementById('req-symbol-val').innerText = `#${step.targetCode}`;
+                document.getElementById('req-color-val').innerText = step.targetColor;
+            } else if (step.type === 'picture') {
+                reqFont.classList.add('hidden');
+                reqSymbol.classList.remove('hidden');
+                reqColor.classList.add('hidden');
+
+                document.getElementById('req-symbol-val').innerText = `Clip Art: ${step.targetPicture}`;
+            } else {
+                reqFont.classList.add('hidden');
+                reqSymbol.classList.remove('hidden');
+                reqColor.classList.add('hidden');
+
+                document.getElementById('req-symbol-val').innerText = step.type === 'numbering_decimal' ? "Numeración 1, 2, 3" : "Números Romanos I, II, III";
+            }
+
+            selectList(step.listId);
+        }
+
+        function selectList(id) {
+            selectedListId = id;
+            
+            // Highlight selected card in sheet
+            for (let i = 1; i <= 10; i++) {
+                const wrapper = document.getElementById(`list-wrapper-${i}`);
+                if (wrapper) {
+                    if (i === id) {
+                        wrapper.classList.add('border-blue-500', 'bg-blue-50/40', 'ring-2', 'ring-blue-300');
+                    } else {
+                        wrapper.classList.remove('border-blue-500', 'bg-blue-50/40', 'ring-2', 'ring-blue-300');
+                    }
+                }
+            }
+
+            document.getElementById('selected-status-pill').innerText = `Seleccionado: Lista ${id}`;
+        }
+
+        // --- VISUAL HINT / SPOTLIGHT EFFECT ---
+        function triggerVisualHint() {
+            const step = steps[currentStepIndex];
+            
+            // Remove previous highlights
+            document.querySelectorAll('.spotlight-hint').forEach(el => el.classList.remove('spotlight-hint'));
+
+            if (step.type.startsWith('numbering')) {
+                const btn = document.getElementById('btn-ribbon-number-menu');
+                btn.classList.add('spotlight-hint');
+            } else {
+                const btn = document.getElementById('btn-ribbon-bullet-menu');
+                btn.classList.add('spotlight-hint');
+            }
+
+            setTimeout(() => {
+                document.querySelectorAll('.spotlight-hint').forEach(el => el.classList.remove('spotlight-hint'));
+            }, 3500);
+        }
+
+        // --- BULLET / NUMBERING EXECUTION ---
+        function toggleDropdown(id) {
+            const el = document.getElementById(id);
+            const isHidden = el.classList.contains('hidden');
+            document.getElementById('dropdown-bullets').classList.add('hidden');
+            document.getElementById('dropdown-numbering').classList.add('hidden');
+
+            if (isHidden) el.classList.remove('hidden');
+        }
+
+        function openDefineBulletModal() {
+            document.getElementById('dropdown-bullets').classList.add('hidden');
+            document.getElementById('modal-define-bullet').classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function openSymbolDialog() {
+            closeModal('modal-define-bullet');
+            document.getElementById('modal-symbol-select').classList.remove('hidden');
+        }
+
+        function openPictureDialog() {
+            closeModal('modal-define-bullet');
+            document.getElementById('modal-picture-select').classList.remove('hidden');
+        }
+
+        function loadSymbolGrid() {
+            const font = document.getElementById('symbol-font-dropdown').value;
+            const container = document.getElementById('symbols-grid-container');
+            container.innerHTML = '';
+
+            const list = fontSymbolsData[font] || fontSymbolsData["Wingdings 2"];
+            list.forEach((item, idx) => {
+                const el = document.createElement('div');
+                el.className = `symbol-item ${idx === 0 ? 'selected' : ''}`;
+                el.innerHTML = item.char;
+                el.onclick = () => {
+                    document.querySelectorAll('.symbol-item').forEach(s => s.classList.remove('selected'));
+                    el.classList.add('selected');
+                    activeSymbol = { ...item, font: font, color: document.getElementById('symbol-color-picker').value };
+                    updateSymbolModalPreview();
+                };
+                container.appendChild(el);
+            });
+
+            activeSymbol = { ...list[0], font: font, color: document.getElementById('symbol-color-picker').value };
+            updateSymbolModalPreview();
+        }
+
+        function changeSymbolFont() {
+            loadSymbolGrid();
+        }
+
+        function updateSymbolModalPreview() {
+            const color = document.getElementById('symbol-color-picker').value;
+            activeSymbol.color = color;
+
+            document.getElementById('selected-symbol-code-text').innerText = `#${activeSymbol.code} (${activeSymbol.font})`;
+            const disp = document.getElementById('selected-symbol-preview-display');
+            disp.innerText = activeSymbol.char;
+            disp.style.color = color;
+
+            document.getElementById('modal-bullet-preview-char').innerText = activeSymbol.char;
+            document.getElementById('modal-bullet-preview-char').style.color = color;
+        }
+
+        function saveSymbolAndBack() {
+            activePicture = null;
+            closeModal('modal-symbol-select');
+            openDefineBulletModal();
+        }
+
+        function loadPictureGrid() {
+            const container = document.getElementById('picture-clipart-grid');
+            container.innerHTML = '';
+
+            clipArtData.forEach((pic, idx) => {
+                const el = document.createElement('div');
+                el.className = `p-3 border-2 rounded-lg bg-white hover:border-office-blue cursor-pointer flex flex-col items-center justify-center ${idx === 0 ? 'border-office-blue bg-blue-50' : 'border-gray-200'}`;
+                el.onclick = () => {
+                    document.querySelectorAll('#picture-clipart-grid > div').forEach(d => d.classList.remove('border-office-blue', 'bg-blue-50'));
+                    el.classList.add('border-office-blue', 'bg-blue-50');
+                    activePicture = pic.emoji;
+                };
+                el.innerHTML = `<span class="text-3xl mb-1">${pic.emoji}</span><span class="text-[10px] text-gray-600 font-bold">${pic.name}</span>`;
+                container.appendChild(el);
+            });
+            activePicture = clipArtData[0].emoji;
+        }
+
+        function savePictureAndBack() {
+            if (activePicture) {
+                document.getElementById('modal-bullet-preview-char').innerText = activePicture;
+                document.getElementById('modal-bullet-preview-char').style.color = 'inherit';
+            }
+            closeModal('modal-picture-select');
+            openDefineBulletModal();
+        }
+
+        function confirmCustomBullet() {
+            closeModal('modal-define-bullet');
+            
+            const ul = document.getElementById(`list-ul-${selectedListId}`);
+            if (!ul) return;
+
+            const items = ul.querySelectorAll('li');
+            items.forEach(li => {
+                const text = li.textContent.replace(/^[0-9IIVXA-E]+\.\s*/, '');
+                li.innerHTML = text;
+                li.style.listStyleType = 'none';
+
+                const charSpan = document.createElement('span');
+                if (activePicture) {
+                    charSpan.innerText = activePicture;
+                    charSpan.style.fontSize = '16px';
+                } else {
+                    charSpan.innerText = activeSymbol.char;
+                    charSpan.style.color = activeSymbol.color;
+                    charSpan.style.fontSize = '15px';
+                }
+                charSpan.style.display = 'inline-block';
+                charSpan.style.width = '24px';
+                charSpan.style.marginLeft = '-24px';
+                charSpan.style.fontWeight = 'bold';
+
+                li.prepend(charSpan);
+            });
+
+            validateCurrentStepSuccess();
+        }
+
+        function applyPresetBullet(char) {
+            document.getElementById('dropdown-bullets').classList.add('hidden');
+            activeSymbol = { char: char, code: 0, font: "Standard", color: "#000000" };
+            activePicture = null;
+            confirmCustomBullet();
+        }
+
+        function applyPresetNumbering(fmt) {
+            document.getElementById('dropdown-numbering').classList.add('hidden');
+            const ul = document.getElementById(`list-ul-${selectedListId}`);
+            if (!ul) return;
+
+            const items = ul.querySelectorAll('li');
+            items.forEach((li, idx) => {
+                let num = (idx + 1) + ".";
+                if (fmt === 'roman') {
+                    const r = ["I.", "II.", "III.", "IV.", "V."];
+                    num = r[idx] || (idx + 1) + ".";
+                }
+                const clean = li.textContent.replace(/^[0-9IIVXA-E]+\.\s*/, '');
+                li.style.listStyleType = 'none';
+                li.innerHTML = `<span class="font-bold text-office-blue mr-2 inline-block w-6 text-right">${num}</span>${clean}`;
+            });
+
+            validateCurrentStepSuccess();
+        }
+
+        function validateCurrentStepSuccess() {
+            // Trigger celebration
+            confetti({
+                particleCount: 80,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+
+            // Update Badge Status
+            const badge = document.getElementById(`badge-status-${selectedListId}`);
+            if (badge) {
+                badge.innerText = "¡Completado!";
+                badge.className = "text-[10px] bg-green-100 text-green-800 border border-green-300 px-2 py-0.5 rounded-full font-bold flex items-center gap-1";
+                badge.innerHTML = '<i class="fa-solid fa-check"></i> ¡Completado!';
+            }
+
+            // Advance step if guided
+            if (currentStepIndex < steps.length - 1) {
+                setTimeout(() => {
+                    currentStepIndex++;
+                    renderStepMission();
+                }, 1000);
+            }
+        }
+
+        function prevStep() {
+            if (currentStepIndex > 0) {
+                currentStepIndex--;
+                renderStepMission();
+            }
+        }
+
+        function nextStep() {
+            if (currentStepIndex < steps.length - 1) {
+                currentStepIndex++;
+                renderStepMission();
+            }
+        }
+
+        function toggleMode() {
+            isGuidedMode = !isGuidedMode;
+            const panel = document.getElementById('guided-assistant-panel');
+            const btnText = document.getElementById('mode-toggle-text');
+
+            if (isGuidedMode) {
+                panel.classList.remove('hidden');
+                btnText.innerText = "Cambiar a Práctica Libre";
+            } else {
+                panel.classList.add('hidden');
+                btnText.innerText = "Activar Modo Guiado";
+            }
+        }
+
+        function setupFreePracticeSection() {
+            const container = document.getElementById('free-practice-container');
+            container.innerHTML = '';
+
+            for (let i = 1; i <= 5; i++) {
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-lg border border-gray-200 shadow-sm";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <input type="text" value="Lista Libre ${i} (Ej. Deportes, Animales, etc.)" class="font-bold text-gray-800 border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-1 text-sm w-3/4">
+                        <span class="text-[10px] text-gray-400">Práctica Libre</span>
+                    </div>
+                    <ul id="free-ul-${i}" onclick="selectList('free-${i}')" class="interactive-list text-gray-800 p-2 hover:bg-gray-50 rounded border border-dashed border-gray-200 cursor-pointer">
+                        <li>Elemento 1</li>
+                        <li>Elemento 2</li>
+                        <li>Elemento 3</li>
+                        <li>Elemento 4</li>
+                        <li>Elemento 5</li>
+                    </ul>
+                `;
+                container.appendChild(card);
+            }
+        }
+    </script>
+</body>
+</html>
