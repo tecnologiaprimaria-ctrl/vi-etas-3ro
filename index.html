@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colegio Winston - Centro de Juegos Digitales</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Fredoka -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Fredoka', cursive, sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 50%, #fce7f3 100%);
+            user-select: none;
+        }
+
+        .owl-bounce {
+            animation: owl-float 3s ease-in-out infinite;
+        }
+
+        @keyframes owl-float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
+
+        .card-hover {
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-3 md:p-6 text-slate-800">
+
+    <!-- Header Navigation -->
+    <header class="max-w-5xl mx-auto w-full bg-white/80 backdrop-blur-md rounded-3xl p-4 shadow-lg border-2 border-white flex justify-between items-center mb-6">
+        <div class="flex items-center gap-3">
+            <div class="bg-amber-400 text-amber-900 w-12 h-12 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-md">
+                <i class="fa-solid fa-graduation-cap"></i>
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-bold text-sky-600 leading-none">Colegio Winston</h1>
+                <p class="text-xs md:text-sm text-slate-500 font-semibold">Portal de Juegos Interactivos de Computación 💻</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <span class="bg-sky-100 text-sky-700 font-bold text-xs px-3 py-1.5 rounded-full border border-sky-200 shadow-sm hidden sm:block">
+                Primaria
+            </span>
+        </div>
+    </header>
+
+    <!-- Main Mascot Banner -->
+    <main class="max-w-5xl mx-auto w-full flex-grow flex flex-col justify-between">
+        
+        <div class="bg-white/90 backdrop-blur border-4 border-sky-300 rounded-3xl p-5 md:p-6 shadow-xl mb-8 relative overflow-hidden flex flex-col md:flex-row items-center gap-5">
+            <div class="relative shrink-0">
+                <div class="w-24 h-24 md:w-28 md:h-28 bg-amber-300 rounded-full flex items-center justify-center border-4 border-amber-400 shadow-md owl-bounce">
+                    <svg class="w-16 h-16 text-slate-800" viewBox="0 0 64 64" fill="none">
+                        <circle cx="32" cy="36" r="22" fill="#7C3AED"/>
+                        <circle cx="32" cy="38" r="16" fill="#FDE047"/>
+                        <circle cx="22" cy="26" r="9" fill="white"/>
+                        <circle cx="42" cy="26" r="9" fill="white"/>
+                        <circle cx="24" cy="26" r="4" fill="#0F172A"/>
+                        <circle cx="40" cy="26" r="4" fill="#0F172A"/>
+                        <circle cx="25" cy="24" r="1.5" fill="white"/>
+                        <circle cx="41" cy="24" r="1.5" fill="white"/>
+                        <polygon points="32,30 27,37 37,37" fill="#F97316"/>
+                        <polygon points="16,16 22,8 26,20" fill="#6D28D9"/>
+                        <polygon points="48,16 42,8 38,20" fill="#6D28D9"/>
+                        <path d="M18 12 L32 6 L46 12 L32 18 Z" fill="#1E293B"/>
+                        <rect x="28" y="12" width="8" height="4" fill="#1E293B"/>
+                        <path d="M44 12 L44 20" stroke="#F59E0B" stroke-width="2"/>
+                        <circle cx="44" cy="21" r="2" fill="#F59E0B"/>
+                    </svg>
+                </div>
+                <div class="absolute -bottom-1 -right-1 bg-emerald-500 text-white text-xs px-2.5 py-0.5 rounded-full font-bold shadow">
+                    Winston 🦉
+                </div>
+            </div>
+
+            <div class="flex-grow text-center md:text-left">
+                <h2 class="text-2xl md:text-3xl font-bold text-slate-800 mb-1">¡Bienvenido al Aula Digital! 👋</h2>
+                <p class="text-base md:text-lg text-slate-600 font-semibold leading-relaxed">
+                    Elige la actividad interactiva que te indicó tu profesor para empezar a practicar.
+                </p>
+            </div>
+        </div>
+
+        <!-- Cards Grid Area (3 Actividades) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            
+            <!-- CARD 1: MOUSE -->
+            <a href="mouse.html" class="card-hover bg-white rounded-3xl p-6 border-4 border-emerald-300 shadow-lg flex flex-col justify-between h-full group">
+                <div>
+                    <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-4xl mb-4 shadow-sm group-hover:bg-emerald-500 group-hover:text-white transition">
+                        🖱️
+                    </div>
+                    <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Mouse y Mochila</span>
+                    <h3 class="text-2xl font-bold text-slate-800 mt-3 mb-2">Entrena tu Mouse</h3>
+                    <p class="text-sm text-slate-500 font-medium leading-relaxed">
+                        Practica mover el ratón, dar clic, doble clic y arrastrar frutas y útiles escolares a la mochila.
+                    </p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-sm font-bold text-emerald-600">
+                    <span>¡Abrir Juego!</span>
+                    <i class="fa-solid fa-arrow-right transform group-hover:translate-x-1 transition"></i>
+                </div>
+            </a>
+
+            <!-- CARD 2: CORREO -->
+            <a href="correo.html" class="card-hover bg-white rounded-3xl p-6 border-4 border-sky-300 shadow-lg flex flex-col justify-between h-full group">
+                <div>
+                    <div class="w-16 h-16 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center text-4xl mb-4 shadow-sm group-hover:bg-sky-500 group-hover:text-white transition">
+                        📧
+                    </div>
+                    <span class="bg-sky-100 text-sky-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Teclado y Correo</span>
+                    <h3 class="text-2xl font-bold text-slate-800 mt-3 mb-2">Iniciar Sesión</h3>
+                    <p class="text-sm text-slate-500 font-medium leading-relaxed">
+                        Aprende las teclas principales, la combinación Alt Gr + Q para el arroba (@) y entra a tu cuenta.
+                    </p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-sm font-bold text-sky-600">
+                    <span>¡Abrir Juego!</span>
+                    <i class="fa-solid fa-arrow-right transform group-hover:translate-x-1 transition"></i>
+                </div>
+            </a>
+
+            <!-- CARD 3: VIÑETAS WORD -->
+            <a href="viñetas.html" class="card-hover bg-white rounded-3xl p-6 border-4 border-amber-300 shadow-lg flex flex-col justify-between h-full group">
+                <div>
+                    <div class="w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-4xl mb-4 shadow-sm group-hover:bg-amber-500 group-hover:text-white transition">
+                        📝
+                    </div>
+                    <span class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Procesador Word</span>
+                    <h3 class="text-2xl font-bold text-slate-800 mt-3 mb-2">Simulador de Word</h3>
+                    <p class="text-sm text-slate-500 font-medium leading-relaxed">
+                        Practica crear listas con viñetas personalizadas, símbolos, numeración e imágenes.
+                    </p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-sm font-bold text-amber-600">
+                    <span>¡Abrir Juego!</span>
+                    <i class="fa-solid fa-arrow-right transform group-hover:translate-x-1 transition"></i>
+                </div>
+            </a>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-5xl mx-auto w-full text-center text-xs text-slate-500 font-semibold py-2">
+        <p>© Colegio Winston - Laboratorio de Informática Educativa</p>
+    </footer>
+
+</body>
+</html>
